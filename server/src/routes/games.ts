@@ -1,8 +1,8 @@
 import { Router } from "express";
-const router = Router();
+const gameRouter = Router();
 
-router.get("/", (req, res) => {
+gameRouter.get("/", (req, res) => {
   res.json({ message: "Game API is live" });
 });
 
-export default router;
+export default gameRouter;
