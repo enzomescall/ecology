@@ -22,6 +22,11 @@
 .gap-3 { gap: 0.75rem; }
 .gap-4 { gap: 1rem; }
 
+/* Space (margin between stacked children) */
+.space-y-3 > :not(:first-child) { margin-top: 0.75rem; }
+.space-y-4 > :not(:first-child) { margin-top: 1rem; }
+.space-y-6 > :not(:first-child) { margin-top: 1.5rem; }
+
 /* Flexbox direction */
 .flex-col { flex-direction: column; }
 .flex-shrink-0 { flex-shrink: 0; }

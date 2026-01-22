@@ -69,7 +69,7 @@ export function Landing({ onEmailSubmit }: LandingProps) {
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label 
               htmlFor="email" 
@@ -105,9 +105,9 @@ export function Landing({ onEmailSubmit }: LandingProps) {
 
           <button
             type="submit"
-            className="w-full py-3 px-6 rounded-lg transition-all"
+            className="w-full py-3 px-6 rounded-lg transition-all mt-8 mb-8"
             style={{
-              backgroundColor: 'var(--color-forest-600)',
+              backgroundColor: 'var(--color-forest-60s0)',
               color: 'white',
               boxShadow: 'var(--shadow-sm)',
             }}
