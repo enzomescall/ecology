@@ -37,39 +37,33 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header 
-        className="px-4 py-4 sticky top-0 z-10"
-        style={{ 
-          backgroundColor: 'var(--color-bg-card)',
-          borderBottom: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
-            style={{
-              color: 'var(--color-forest-600)',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <h2>Create game</h2>
+      <header className="page-header">
+        <div className="page-header-content">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="button-icon"
+              style={{
+                color: 'var(--color-forest-600)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <h2>Create game</h2>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 max-w-2xl mx-auto">
-        <div className="space-y-6">
+      <main className="page-content">
+        <div className="space-stack-lg">
           {/* Game Name */}
-          <div>
+          <div className="form-group">
             <label 
               htmlFor="game-name" 
-              className="block mb-2"
-              style={{ color: 'var(--color-text-secondary)' }}
+              className="form-label"
             >
               Game name (optional)
             </label>
@@ -79,7 +73,7 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
               value={gameName}
               onChange={(e) => setGameName(e.target.value)}
               placeholder="e.g., Forest Friends"
-              className="w-full px-4 py-3 rounded-lg border-2 transition-colors outline-none"
+              className="form-input"
               style={{
                 backgroundColor: 'var(--color-bg-card)',
                 borderColor: 'var(--color-border)',
@@ -97,14 +91,13 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
           </div>
 
           {/* Invite Players */}
-          <div>
+          <div className="form-group">
             <label 
-              className="block mb-2"
-              style={{ color: 'var(--color-text-secondary)' }}
+              className="form-label"
             >
               Invite players
             </label>
-            <div className="space-y-3">
+            <div className="space-stack-sm">
               {invites.map((email, index) => (
                 <div key={index} className="flex gap-2">
                   <input
@@ -112,7 +105,7 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
                     value={email}
                     onChange={(e) => updateInvite(index, e.target.value)}
                     placeholder="friend@example.com"
-                    className="flex-1 px-4 py-3 rounded-lg border-2 transition-colors outline-none"
+                    className="form-input flex-1"
                     style={{
                       backgroundColor: 'var(--color-bg-card)',
                       borderColor: 'var(--color-border)',
@@ -124,7 +117,7 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
                   {invites.length > 1 && (
                     <button
                       onClick={() => removeInviteField(index)}
-                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors"
+                      className="button-icon"
                       style={{
                         color: 'var(--color-error)',
                         border: '2px solid var(--color-border)',
@@ -146,10 +139,9 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
             </div>
             <button
               onClick={addInviteField}
-              className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+              className="button-ghost mt-3"
               style={{
                 color: 'var(--color-forest-600)',
-                backgroundColor: 'transparent',
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-100)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -161,7 +153,7 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
 
           {/* Info Box */}
           <div 
-            className="p-4 rounded-lg"
+            className="card"
             style={{ 
               backgroundColor: 'var(--color-sage-100)',
               border: '1px solid var(--color-sage-300)',
@@ -191,11 +183,9 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
           <button
             onClick={handleCreate}
             disabled={!canCreate}
-            className="w-full py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               backgroundColor: canCreate ? 'var(--color-forest-600)' : 'var(--color-sage-400)',
-              color: 'white',
-              boxShadow: 'var(--shadow-sm)',
             }}
             onMouseEnter={(e) => {
               if (canCreate) {

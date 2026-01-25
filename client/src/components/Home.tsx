@@ -62,12 +62,12 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+        <div className="max-w-2xl mx-auto flex-between">
           <div>
             <h2>Ecosystem</h2>
           </div>
           <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center"
+            className="avatar avatar-sm"
             style={{ backgroundColor: 'var(--color-forest-600)', color: 'white' }}
           >
             <span className="text-sm">{getInitials(user.name)}</span>
@@ -76,38 +76,18 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 max-w-2xl mx-auto">
+      <main className="page-content">
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid-2col mb-6">
           <button
             onClick={onCreateGame}
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all"
-            style={{
-              backgroundColor: 'var(--color-forest-600)',
-              color: 'white',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+            className="button-primary"
           >
             <Plus size={20} />
             Create game
           </button>
           <button
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-colors"
-            style={{
-              backgroundColor: 'var(--color-bg-card)',
-              color: 'var(--color-forest-600)',
-              border: '2px solid var(--color-border)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-forest-600)';
-              e.currentTarget.style.backgroundColor = 'var(--color-sage-100)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-border)';
-              e.currentTarget.style.backgroundColor = 'var(--color-bg-card)';
-            }}
+            className="button-secondary"
           >
             <LogIn size={20} />
             Join game
@@ -116,49 +96,35 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
         {/* Games List */}
         <div>
-          <h3 className="mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+          <h3 className="mb-4 text-secondary">
             Your games
           </h3>
-          <div className="space-y-3">
+          <div className="space-stack-sm">
             {mockGames.map((game) => (
               <button
                 key={game.id}
                 onClick={() => onJoinGame(game.id)}
-                className="w-full text-left p-4 rounded-lg transition-all"
-                style={{
-                  backgroundColor: 'var(--color-bg-card)',
-                  border: '2px solid var(--color-border)',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-sage-400)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                }}
+                className="card card-button"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex-start justify-between mb-3">
                   <div>
                     <h3>{game.name}</h3>
                     <p 
-                      className="text-sm"
-                      style={{ color: 'var(--color-text-muted)' }}
+                      className="text-sm text-muted"
                     >
                       {game.playerCount} players
                     </p>
                   </div>
                   {game.status === 'your-turn' && (
                     <span
-                      className="px-3 py-1 rounded-full text-sm inline-flex items-center gap-1"
+                      className="status-badge"
                       style={{
                         backgroundColor: 'var(--color-success)',
                         color: 'white',
                       }}
                     >
                       <span 
-                        className="w-2 h-2 rounded-full animate-pulse"
+                        className="status-badge-pulse"
                         style={{ backgroundColor: 'white' }}
                       />
                       Your turn
@@ -166,7 +132,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
                   )}
                   {game.status === 'waiting' && (
                     <span
-                      className="px-3 py-1 rounded-full text-sm"
+                      className="status-badge"
                       style={{
                         backgroundColor: 'var(--color-sage-200)',
                         color: 'var(--color-forest-700)',
@@ -177,7 +143,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
                   )}
                   {game.status === 'finished' && (
                     <span
-                      className="px-3 py-1 rounded-full text-sm"
+                      className="status-badge"
                       style={{
                         backgroundColor: 'var(--color-earth-400)',
                         color: 'white',
@@ -189,11 +155,11 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
                 </div>
 
                 {/* Player Avatars */}
-                <div className="flex gap-2">
+                <div className="avatar-row">
                   {game.players.map((player, idx) => (
                     <div
                       key={idx}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
+                      className="avatar avatar-xs"
                       style={{
                         backgroundColor: player === 'You' 
                           ? 'var(--color-forest-600)' 

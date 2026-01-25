@@ -16,12 +16,12 @@ export function Landing({ onEmailSubmit }: LandingProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="page-container">
+      <div className="page-constraint">
         {/* Logo/Icon */}
-        <div className="flex justify-center mb-6">
+        <div className="flex-center mb-6">
           <div 
-            className="w-20 h-20 rounded-2xl flex items-center justify-center"
+            className="avatar avatar-lg"
             style={{ backgroundColor: 'var(--color-forest-600)' }}
           >
             <svg 
@@ -69,18 +69,17 @@ export function Landing({ onEmailSubmit }: LandingProps) {
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="form-group stacked">
           <div>
             <label 
               htmlFor="email" 
-              className="block mb-2"
-              style={{ color: 'var(--color-text-secondary)' }}
+              className="form-label"
             >
               Email address
             </label>
-            <div className="relative">
+            <div className="form-input-wrapper">
               <Mail 
-                className="absolute left-3 top-1/2 -translate-y-1/2" 
+                className="form-input-icon" 
                 size={20}
                 style={{ color: 'var(--color-sage-600)' }}
               />
@@ -91,7 +90,7 @@ export function Landing({ onEmailSubmit }: LandingProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full pl-11 pr-4 py-3 rounded-lg border-2 transition-colors outline-none"
+                className="form-input form-input-with-icon"
                 style={{
                   backgroundColor: 'var(--color-bg-card)',
                   borderColor: 'var(--color-border)',
@@ -105,21 +104,13 @@ export function Landing({ onEmailSubmit }: LandingProps) {
 
           <button
             type="submit"
-            className="w-full py-3 px-6 rounded-lg transition-all mt-8 mb-8"
-            style={{
-              backgroundColor: 'var(--color-forest-60s0)',
-              color: 'white',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+            className="button-primary mt-8 mb-8"
           >
             Send login link
           </button>
 
           <p 
-            className="text-sm text-center"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="text-sm text-center text-muted"
           >
             No passwords. We'll email you a magic link.
           </p>

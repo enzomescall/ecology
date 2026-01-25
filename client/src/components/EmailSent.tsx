@@ -8,12 +8,12 @@ interface EmailSentProps {
 
 export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md text-center">
+    <div className="page-container">
+      <div className="page-constraint text-center">
         {/* Icon */}
-        <div className="flex justify-center mb-6">
+        <div className="flex-center mb-6">
           <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center"
+            className="avatar avatar-lg"
             style={{ backgroundColor: 'var(--color-sage-200)' }}
           >
             <Mail size={40} style={{ color: 'var(--color-forest-600)' }} />
@@ -23,8 +23,7 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
         {/* Message */}
         <h1 className="mb-3">Check your email</h1>
         <p 
-          className="mb-2"
-          style={{ color: 'var(--color-text-secondary)' }}
+          className="mb-2 text-secondary"
         >
           We've sent a login link to:
         </p>
@@ -35,8 +34,7 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
           {email}
         </p>
         <p 
-          className="text-sm mb-8"
-          style={{ color: 'var(--color-text-muted)' }}
+          className="mb-8 text-sm text-muted"
         >
           Click the link in the email to sign in. The link will expire in 15 minutes.
         </p>
@@ -44,20 +42,7 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
         {/* Resend Button */}
         <button
           onClick={onResend}
-          className="inline-flex items-center gap-2 px-6 py-2 rounded-lg transition-colors"
-          style={{
-            color: 'var(--color-forest-600)',
-            border: '2px solid var(--color-border)',
-            backgroundColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-forest-600)';
-            e.currentTarget.style.backgroundColor = 'var(--color-sage-100)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-border)';
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
+          className="button-ghost"
         >
           <RefreshCw size={16} />
           Resend link
@@ -66,8 +51,7 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
         {/* Demo: simulate login for prototype */}
         <div className="mt-8 pt-8" style={{ borderTop: '1px solid var(--color-border)' }}>
           <p 
-            className="text-sm mb-3"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="text-sm mb-3 text-muted"
           >
             Demo mode:
           </p>

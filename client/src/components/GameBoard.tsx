@@ -85,19 +85,12 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   return (
     <div className="min-h-screen pb-24">
       {/* Top Bar */}
-      <header 
-        className="px-4 py-3 sticky top-0 z-10"
-        style={{ 
-          backgroundColor: 'var(--color-bg-card)',
-          borderBottom: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 mb-2">
+      <header className="page-header">
+        <div className="page-header-content">
+          <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+              className="button-icon-sm"
               style={{ color: 'var(--color-forest-600)' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -108,7 +101,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
           </div>
           {isMyTurn ? (
             <div 
-              className="px-3 py-1.5 rounded-lg inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg"
               style={{ backgroundColor: 'var(--color-success)', color: 'white' }}
             >
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -116,7 +109,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             </div>
           ) : (
             <div 
-              className="px-3 py-1.5 rounded-lg inline-flex"
+              className="inline-flex px-3 py-1.5 rounded-lg"
               style={{ backgroundColor: 'var(--color-sage-200)', color: 'var(--color-forest-700)' }}
             >
               <span className="text-sm">Waiting for others</span>
@@ -126,21 +119,22 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-4 max-w-2xl mx-auto">
+      <main className="page-content">
         {/* Opponent Summary */}
         <div className="mb-4">
           <div className="flex gap-2">
             {opponents.map((opponent) => (
               <div
                 key={opponent.id}
-                className="relative flex items-center gap-2 px-3 py-2 rounded-lg"
+                className="card flex items-center gap-2"
                 style={{
                   backgroundColor: 'var(--color-sage-100)',
                   border: '1px solid var(--color-border)',
+                  padding: '0.75rem',
                 }}
               >
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"
                   style={{
                     backgroundColor: 'var(--color-sage-400)',
                     color: 'white',
@@ -152,7 +146,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                   {opponent.name}
                 </span>
                 <div
-                  className="w-2 h-2 rounded-full"
+                  className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{
                     backgroundColor: opponent.isCurrentTurn 
                       ? 'var(--color-success)' 
@@ -166,13 +160,15 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
 
         {/* Player Grid */}
         <div 
-          className="mb-6 p-4 rounded-xl"
+          className="card mb-6"
           style={{
             backgroundColor: 'var(--color-bg-card)',
             border: '2px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)',
+            padding: '1rem',
           }}
         >
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid-5col gap-2">
             {grid.map((row, rowIdx) =>
               row.map((card, colIdx) => (
                 <button
@@ -222,7 +218,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                   <button
                     key={card.id}
                     onClick={() => setSelectedCard(isSelected ? null : card)}
-                    className="flex-shrink-0 w-24 h-32 rounded-xl transition-all"
+                    className="flex-shrink-0 w-24 h-32 rounded-xl transition-all card"
                     style={{
                       backgroundColor: card.color,
                       border: `3px solid ${isSelected ? 'var(--color-forest-900)' : 'transparent'}`,
@@ -244,7 +240,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         {/* Waiting State */}
         {!isMyTurn && (
           <div 
-            className="text-center py-12 rounded-xl"
+            className="card text-center py-12"
             style={{
               backgroundColor: 'var(--color-sage-100)',
               border: '1px solid var(--color-border)',
@@ -282,11 +278,9 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             <button
               onClick={handlePlaceCard}
               disabled={!canPlaceCard}
-              className="w-full py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: canPlaceCard ? 'var(--color-forest-600)' : 'var(--color-sage-400)',
-                color: 'white',
-                boxShadow: 'var(--shadow-sm)',
               }}
               onMouseEnter={(e) => {
                 if (canPlaceCard) {

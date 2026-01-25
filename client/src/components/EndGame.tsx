@@ -60,13 +60,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
-      <header 
-        className="px-4 py-6 text-center"
-        style={{ 
-          backgroundColor: 'var(--color-bg-card)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
+      <header className="card-header text-center">
         <div className="max-w-2xl mx-auto">
           <div 
             className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
@@ -82,18 +76,18 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 max-w-2xl mx-auto">
+      <main className="page-content">
         <h3 className="mb-4" style={{ color: 'var(--color-text-secondary)' }}>
           Final Rankings
         </h3>
 
-        <div className="space-y-3">
+        <div className="space-stack-md">
           {mockScores.map((player) => {
             const isExpanded = expandedPlayer === player.name;
             return (
               <div
                 key={player.name}
-                className="rounded-xl overflow-hidden transition-all"
+                className="card rounded-xl overflow-hidden"
                 style={{
                   backgroundColor: 'var(--color-bg-card)',
                   border: '2px solid var(--color-border)',
@@ -102,7 +96,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
               >
                 <button
                   onClick={() => toggleExpanded(player.name)}
-                  className="w-full p-4 flex items-center gap-4 transition-colors"
+                  className="card-button w-full p-4 flex items-center gap-4 transition-colors"
                   style={{
                     backgroundColor: player.name === 'You' 
                       ? 'var(--color-sage-100)' 
@@ -121,10 +115,17 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                 >
                   {/* Rank Badge */}
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                    className="rank-badge"
                     style={{
                       backgroundColor: getRankColor(player.rank),
                       color: 'white',
+                      width: '3rem',
+                      height: '3rem',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
                     {player.rank === 1 && <Trophy size={24} />}
@@ -137,7 +138,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                       <h3>{player.name}</h3>
                       {player.name === 'You' && (
                         <span
-                          className="px-2 py-0.5 rounded text-xs"
+                          className="label-badge text-xs px-2 py-0.5 rounded"
                           style={{
                             backgroundColor: 'var(--color-forest-600)',
                             color: 'white',
@@ -170,7 +171,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                     >
                       Score breakdown
                     </p>
-                    <div className="space-y-2">
+                    <div className="space-stack-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                           Trees
@@ -207,14 +208,12 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
         </div>
 
         {/* Actions */}
-        <div className="mt-8 space-y-3">
+        <div className="mt-8 space-stack-sm">
           <button
             onClick={onNewGame}
-            className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg transition-all"
+            className="button-primary"
             style={{
               backgroundColor: 'var(--color-forest-600)',
-              color: 'white',
-              boxShadow: 'var(--shadow-sm)',
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
@@ -224,9 +223,8 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
           </button>
           <button
             onClick={onReturnHome}
-            className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg transition-colors"
+            className="button-secondary"
             style={{
-              backgroundColor: 'transparent',
               color: 'var(--color-forest-600)',
               border: '2px solid var(--color-border)',
             }}
