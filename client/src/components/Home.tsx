@@ -17,6 +17,12 @@ interface HomeProps {
 export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [games, setGames] = useState<GameDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editedName, setEditedName] = useState(user.name);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchGames = async () => {
     setIsLoading(true);
@@ -55,7 +61,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
   useEffect(() => {
     fetchGames();
-    const interval = setInterval(fetchGames, 3000);
+    const interval = setInterval(fetchGames, 30000);
     return () => clearInterval(interval);
   }, [user.userId]);
 
@@ -87,12 +93,28 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               <RefreshCw size={20} />
             </button>
-            <div 
-              className="avatar avatar-sm"
-              style={{ backgroundColor: 'var(--color-forest-600)', color: 'white' }}
+            <button
+              onClick={() => setShowUserModal(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '2.5rem',
+                height: '2.5rem',
+                borderRadius: '0.5rem',
+                backgroundColor: 'var(--color-forest-600)',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: 'bold',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+              title="User profile"
             >
-              <span className="text-sm">{getInitials(user.name)}</span>
-            </div>
+              {getInitials(user.name)}
+            </button>
           </div>
         </div>
       </header>
@@ -107,6 +129,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             Create game
           </button>
           <button
+            onClick={() => setShowJoinModal(true)}
             className="button-secondary"
           >
             <LogIn size={20} />
@@ -203,6 +226,421 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           )}
         </div>
       </main>
+
+      {/* Join Game - Not Supported Modal */}
+      {showJoinModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(26, 46, 26, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+          onClick={() => setShowJoinModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Join Game
+            </h2>
+            <p 
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '1.5rem',
+                lineHeight: '1.5',
+              }}
+            >
+              This functionality is not supported yet.
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setShowJoinModal(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  color: 'white',
+                  backgroundColor: 'var(--color-forest-600)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Profile Modal */}
+      {showUserModal && !showLogoutConfirm && !showDeleteConfirm && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(26, 46, 26, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+          onClick={() => setShowUserModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Account
+            </h2>
+
+            {/* Name Field */}
+            <div style={{ marginBottom: '1rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  marginBottom: '0.5rem',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                Name
+              </label>
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.875rem',
+                  boxSizing: 'border-box',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-bg-primary)',
+                }}
+              />
+            </div>
+
+            {/* Email Field */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  marginBottom: '0.5rem',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                value={user.email}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.875rem',
+                  boxSizing: 'border-box',
+                  color: 'var(--color-text-muted)',
+                  backgroundColor: 'var(--color-sage-100)',
+                  cursor: 'not-allowed',
+                }}
+              />
+            </div>
+
+            {/* Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'space-between',
+              }}
+            >
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isSaving}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: `1px solid var(--color-error)`,
+                  color: 'var(--color-error)',
+                  backgroundColor: 'transparent',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.5 : 1,
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'rgba(184, 93, 58, 0.1)')}
+                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                Delete Account
+              </button>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  disabled={isSaving}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    border: `1px solid var(--color-border)`,
+                    color: 'var(--color-text-secondary)',
+                    backgroundColor: 'transparent',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    opacity: isSaving ? 0.5 : 1,
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                  }}
+                  onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
+                  onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(26, 46, 26, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 51,
+          }}
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Log Out?
+            </h2>
+            <p 
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '1.5rem',
+                lineHeight: '1.5',
+              }}
+            >
+              You'll have to log back in with your email.
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={isSaving}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: `1px solid var(--color-border)`,
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.5 : 1,
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
+                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('gameUser');
+                  location.reload();
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  color: 'white',
+                  backgroundColor: 'var(--color-forest-600)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(26, 46, 26, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 51,
+          }}
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: 'var(--color-error)',
+              }}
+            >
+              Delete Account?
+            </h2>
+            <p 
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '1.5rem',
+                lineHeight: '1.5',
+              }}
+            >
+              You will lose all games associated to this email.
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isSaving}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: `1px solid var(--color-border)`,
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.5 : 1,
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
+                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('gameUser');
+                  location.reload();
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  color: 'white',
+                  backgroundColor: 'var(--color-error)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a85030'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-error)'}
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
