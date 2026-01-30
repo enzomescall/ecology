@@ -17,6 +17,7 @@ export interface GamePlayer {
   name: string;
   joinedAt: Date;
   score?: number;
+  left_game?: boolean;
 }
 
 export interface Game {

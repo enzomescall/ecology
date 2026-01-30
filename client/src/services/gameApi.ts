@@ -11,6 +11,7 @@ export interface GamePlayer {
   name: string;
   joinedAt: string;
   score: number;
+  left_game?: boolean;
 }
 
 export interface GameMove {
@@ -179,6 +180,24 @@ export async function finishGame(gameId: string, userId: string): Promise<Game> 
   return data;
 }
 
+/**
+ * Leave or delete a game
+ */
+export async function leaveGame(gameId: string, userId: string): Promise<Game> {
+  const response = await fetch(`${BASE_URL}/${gameId}/leave`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || isError(data)) {
+    throw new Error(data.error || 'Failed to leave game');
+  }
+
+  return data;
+}
 /**
  * DEBUG: Force game to active status
  */

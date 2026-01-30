@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, TreeDeciduous, TreePine, Bird, Fish, Bug, Flower, Leaf, Sprout } from 'lucide-react';
-import { getGameState, submitMove, debugActivateGame } from '../services/gameApi';
+import { ArrowLeft, TreeDeciduous, TreePine, Bird, Fish, Bug, Flower, Leaf, Sprout, LogOut } from 'lucide-react';
+import { getGameState, submitMove, debugActivateGame, leaveGame } from '../services/gameApi';
 import type { Game, } from '../services/gameApi';
 import type { User } from '../App';
 
@@ -46,11 +46,17 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   const [error, setError] = useState<string>('');
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [isLeavingGame, setIsLeavingGame] = useState(false);
   
   // Player grid (4 rows x 5 cols)
   const [grid, setGrid] = useState<(Card | null)[][]>(
     Array(4).fill(null).map(() => Array(5).fill(null))
   );
+
+  // Check if user is the last active player
+  const isLastPlayer = game ? game.players.filter(p => !p.left_game).length === 1 : false;
+  const leaveText = isLastPlayer ? 'Delete Game' : 'Leave Game';
 
   // Reconstruct grid from game moves
   const reconstructGrid = (gameData: Game) => {
@@ -122,6 +128,18 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     }
   };
 
+  const handleLeaveGame = async () => {
+    try {
+      setIsLeavingGame(true);
+      await leaveGame(gameId, user.userId);
+      setShowLeaveModal(false);
+      onBack();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to leave game');
+      setIsLeavingGame(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="page-container flex-center">
@@ -155,6 +173,16 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <ArrowLeft size={20} />
+            </button>
+            <button
+              onClick={() => setShowLeaveModal(true)}
+              className="button-icon-sm"
+              style={{ color: 'var(--color-error)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-error-100)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title={leaveText}
+            >
+              <LogOut size={20} />
             </button>
             <h3>{game.name}</h3>
           </div>
@@ -399,6 +427,107 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
           scrollbar-width: none;
         }
       `}</style>
+
+      {/* Leave/Delete Game Modal */}
+      {showLeaveModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(26, 46, 26, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+          onClick={() => !isLeavingGame && setShowLeaveModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-card)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              {isLastPlayer ? 'Delete Game?' : 'Leave Game?'}
+            </h2>
+            <p 
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '1rem',
+                lineHeight: '1.5',
+              }}
+            >
+              {isLastPlayer 
+                ? 'You are the last player in this game. Are you sure you want to delete it?'
+                : 'You are about to leave an active game. Are you sure?'
+              }
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                disabled={isLeavingGame}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: `1px solid var(--color-border)`,
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent',
+                  cursor: isLeavingGame ? 'not-allowed' : 'pointer',
+                  opacity: isLeavingGame ? 0.5 : 1,
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => !isLeavingGame && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
+                onMouseLeave={(e) => !isLeavingGame && (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLeaveGame}
+                disabled={isLeavingGame}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  color: 'white',
+                  backgroundColor: 'var(--color-error)',
+                  cursor: isLeavingGame ? 'not-allowed' : 'pointer',
+                  opacity: isLeavingGame ? 0.5 : 1,
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => !isLeavingGame && (e.currentTarget.style.backgroundColor = '#a85030')}
+                onMouseLeave={(e) => !isLeavingGame && (e.currentTarget.style.backgroundColor = 'var(--color-error)')}
+              >
+                {isLeavingGame ? 'Processing...' : leaveText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

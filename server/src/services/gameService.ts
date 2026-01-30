@@ -222,3 +222,29 @@ export function debugActivateGame(gameId: string): Game {
   game.turnNumber = 1;
   return gameStore.updateGame(game);
 }
+export function leaveGame(gameId: string, userId: string): Game {
+  const game = gameStore.getGameById(gameId);
+
+  if (!game) {
+    throw new Error(`Game ${gameId} not found`);
+  }
+
+  const player = game.players.find(p => p.userId === userId);
+  if (!player) {
+    throw new Error(`User ${userId} not in this game`);
+  }
+
+  // Mark player as left
+  player.left_game = true;
+
+  // Count active players (not left)
+  const activePlayers = game.players.filter(p => !p.left_game);
+
+  // If last person leaves, mark game as finished/deleted
+  if (activePlayers.length === 0) {
+    game.status = 'finished';
+    game.finishedAt = new Date();
+  }
+
+  return gameStore.updateGame(game);
+}

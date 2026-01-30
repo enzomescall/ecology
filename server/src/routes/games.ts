@@ -172,4 +172,18 @@ router.get('/debug/all-data', (req, res) => {
   }
 });
 
+// POST /games/:id/leave - Leave or delete a game
+router.post('/:id/leave', (req, res) => {
+  try {
+    const validated = z.object({ userId: z.string().min(1) }).parse(req.body);
+    const game = gameService.leaveGame(req.params.id, validated.userId);
+    res.json(game);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid request', issues: err.issues });
+    }
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
 export default router;
