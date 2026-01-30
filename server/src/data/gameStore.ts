@@ -45,6 +45,10 @@ export function getGameMoves(gameId: string): GameMove[] {
   return movesStore.get(gameId) || [];
 }
 
+export function getAllGames(): Game[] {
+  return Array.from(gamesStore.values());
+}
+
 export function clearAllData(): void {
   gamesStore.clear();
   movesStore.clear();

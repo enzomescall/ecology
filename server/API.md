@@ -1,172 +1,192 @@
 # Game API Documentation
 
-Turn-based, asynchronous game backend with in-memory state management.
+Turn-based, asynchronous game backend with layered architecture.
 
 ## Architecture
 
 ```
-HTTP Routes (games.ts)
+HTTP Routes (games.ts) - Input validation & error handling
     ↓
-Game Services (gameService.ts) - Business Logic
+Game Services (gameService.ts) - Business logic & state transitions
     ↓
-Data Store (gameStore.ts) - In-Memory Maps (swappable with SQL)
+Data Store (gameStore.ts) - In-memory Maps (designed for SQL migration)
 ```
 
-## API Endpoints
+## Base URL
+```
+http://localhost:4000/api/game
+```
 
-### Create Game
+## Endpoints
+
+### 1. Create Game
+Creates a new game with the requesting user as host.
+
 ```http
-POST /api/game
+POST /api/game/games
 Content-Type: application/json
 
+Request:
 {
-  "userId": "string",
-  "email": "string@email.com",
-  "name": "string"
+  "userId": "user-123",
+  "email": "alice@example.com",
+  "name": "Alice"
 }
 
 Response (201):
 {
-  "id": "uuid",
-  "hostUserId": "string",
-  "name": "Game xxx...",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "hostUserId": "user-123",
+  "name": "Game 550e8400",
   "status": "lobby",
   "players": [...],
   "currentPlayerIndex": 0,
   "turnNumber": 0,
-  "createdAt": "ISO8601",
+  "createdAt": "2026-01-28T10:00:00.000Z",
   "moves": []
 }
 ```
 
-### Join Game
+### 2. Join Game
+Adds a player to a game (only in lobby status).
+
 ```http
-POST /api/game/:gameId/join
+POST /api/game/games/{gameId}/join
 Content-Type: application/json
 
+Request:
 {
-  "userId": "string",
-  "email": "string@email.com",
-  "name": "string"
+  "userId": "user-456",
+  "email": "bob@example.com",
+  "name": "Bob"
 }
 
-Response (200): Full Game object
-Errors (400):
-  - "Game not found"
-  - "Cannot join: game is in 'active/finished' status"
-  - "User already in this game"
+Response (200): Updated Game object with new player in players array
+
+Error (400):
+{
+  "error": "Cannot join: game is in 'active' status"
+}
 ```
 
-### Start Game
+### 3. Start Game
+Transitions game from lobby to active (host only, requires ≥2 players).
+
 ```http
-POST /api/game/:gameId/start
+POST /api/game/games/{gameId}/start
 Content-Type: application/json
 
+Request:
 {
-  "userId": "string"  // Must be host
+  "userId": "user-123"
 }
 
-Response (200): Full Game object with status: "active", turnNumber: 1
-Errors (400):
-  - "Game not found"
-  - "Only host can start game"
-  - "Game already started"
-  - "Need at least 2 players"
+Response (200): Updated Game object with status: "active", turnNumber: 1, startedAt timestamp
 ```
 
-### Get Game State
+### 4. Get Game State
+Fetches current game state with turn indicator.
+
 ```http
-GET /api/game/:gameId?userId=string
+GET /api/game/games/{gameId}?userId={userId}
 
 Response (200):
 {
-  "game": { ...Full game object... },
-  "isCurrentPlayer": boolean
+  "game": { ...full Game object... },
+  "isCurrentPlayer": true
 }
-
-Errors (400):
-  - "Game not found"
-  - "User not in this game"
 ```
 
-### Submit Move
+### 5. Submit Move
+Player submits their move. Automatically advances turn to next player.
+
 ```http
-POST /api/game/:gameId/move
+POST /api/game/games/{gameId}/move
 Content-Type: application/json
 
+Request:
 {
-  "userId": "string",
-  "moveData": { "cell": 0, "action": "place" }
+  "userId": "user-123",
+  "moveData": { "action": "place_tile", "x": 2, "y": 3 }
 }
 
-Response (200): Full Game object with:
-  - moves: [..., {new move recorded}]
-  - currentPlayerIndex: incremented to next player
-  - turnNumber: incremented if all players have moved
-
-Errors (400):
-  - "Game not found"
-  - "Game not active"
-  - "Not your turn. Current: PlayerName"
+Response (200): Updated Game object with new move recorded
 ```
 
-### Finish Game
+### 6. Finish Game
+Host ends the game.
+
 ```http
-POST /api/game/:gameId/finish
+POST /api/game/games/{gameId}/finish
 Content-Type: application/json
 
+Request:
 {
-  "userId": "string"  // Must be host
+  "userId": "user-123"
 }
 
-Response (200): Full Game object with status: "finished", finishedAt: ISO8601
-Errors (400):
-  - "Game not found"
-  - "Only host can finish game"
+Response (200): Updated Game object with status: "finished"
 ```
 
-## Game State Transitions
+## Error Responses
+
+All errors return:
+```json
+{
+  "error": "Human-readable message",
+  "issues": [...]  // For validation errors only
+}
+```
+
+Status codes: 201 (created), 200 (success), 400 (error), 500 (server error)
+
+## Game State Flow
 
 ```
-[Create Game] → lobby
-                 ↓
-            [Join Game] (can add players while in lobby)
-                 ↓
-            [Start Game] → active (min 2 players)
-                 ↓
-            [Submit Move] (cycles through players)
-                 ↓
-            [Finish Game] → finished
+CREATE → LOBBY → START → ACTIVE → FINISH → FINISHED
+         (join)        (moves)   (host only)
 ```
 
 ## Turn Progression
 
-- Player 0 submits move → currentPlayerIndex becomes 1
-- Player 1 submits move → currentPlayerIndex becomes 0, turnNumber increments
-- Next cycle starts
+With N players, turn advances in a cycle:
+- Player 0 moves → Player 1's turn
+- Player 1 moves → Player 2's turn
+- ...
+- Player N-1 moves → Player 0's turn, turnNumber increments
 
 ## Data Store
 
-In-memory Map-based storage designed for future SQL migration:
-- `games`: Map<gameId, Game>
-- `moves`: Map<moveId, GameMove>
+In-memory Map-based (gameStore.ts) designed for SQL migration. All CRUD operations abstracted; replace implementation without changing service layer or routes.
 
-All functions match future database interface patterns for seamless migration.
+Pre-defined schema in schema.sql.
 
-## Testing
+## Development
 
 ```bash
-# Start dev server
-npm run dev
-
-# In another terminal, create game
-curl -X POST http://localhost:4000/api/game \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"p1","email":"a@test.com","name":"Alice"}'
+npm run dev          # Start on port 4000
+npm run build        # TypeScript compilation
 ```
 
-## Error Handling
+Example:
+```bash
+# Create
+GAME_ID=$(curl -X POST http://localhost:4000/api/game/games \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"u1","email":"a@test.com","name":"Alice"}' | jq -r '.id')
 
-- **400**: Validation error (ZodError) or game logic error
-- **500**: Unexpected server error
-- All errors return `{ error: "message" }` or `{ error: "message", issues: [...] }`
+# Join
+curl -X POST http://localhost:4000/api/game/games/$GAME_ID/join \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"u2","email":"b@test.com","name":"Bob"}'
+
+# Start
+curl -X POST http://localhost:4000/api/game/games/$GAME_ID/start \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"u1"}'
+
+# Move
+curl -X POST http://localhost:4000/api/game/games/$GAME_ID/move \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"u1","moveData":{"x":1}}'
+```

@@ -201,3 +201,24 @@ export function finishGame(gameId: string, userId: string): Game {
 
   return gameStore.updateGame(game);
 }
+
+export function getUserGames(userId: string): Game[] {
+  return gameStore.listGamesForUser(userId);
+}
+
+export function debugGetAllGames(): Game[] {
+  // Returns all games in the store for debugging
+  return gameStore.getAllGames();
+}
+
+export function debugActivateGame(gameId: string): Game {
+  const game = gameStore.getGameById(gameId);
+  if (!game) {
+    throw new Error(`Game ${gameId} not found`);
+  }
+  game.status = 'active';
+  game.startedAt = new Date();
+  game.currentPlayerIndex = 0;
+  game.turnNumber = 1;
+  return gameStore.updateGame(game);
+}

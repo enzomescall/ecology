@@ -1,59 +1,70 @@
-import { Plus, LogIn, User } from 'lucide-react';
+import { Plus, LogIn, User, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { User as UserType } from '../App';
+import type { Game } from '../services/gameApi';
 
-interface Game {
-  id: string;
-  name: string;
-  playerCount: number;
+interface GameDisplay {
+  game: Game;
   status: 'your-turn' | 'waiting' | 'finished';
-  players: string[];
 }
 
 interface HomeProps {
-  user: { email: string; name: string };
+  user: UserType;
   onCreateGame: () => void;
   onJoinGame: (gameId: string) => void;
 }
 
-// Mock data
-const mockGames: Game[] = [
-  {
-    id: 'game-1',
-    name: 'Forest Friends',
-    playerCount: 3,
-    status: 'your-turn',
-    players: ['You', 'Alex', 'Jordan'],
-  },
-  {
-    id: 'game-2',
-    name: 'Sunday Game',
-    playerCount: 4,
-    status: 'waiting',
-    players: ['You', 'Sam', 'Riley', 'Morgan'],
-  },
-  {
-    id: 'game-3',
-    name: 'Quick Match',
-    playerCount: 2,
-    status: 'waiting',
-    players: ['You', 'Taylor'],
-  },
-  {
-    id: 'game-4',
-    name: 'Champions League',
-    playerCount: 4,
-    status: 'finished',
-    players: ['You', 'Casey', 'Drew', 'Blake'],
-  },
-];
-
 export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
+  const [games, setGames] = useState<GameDisplay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchGames = async () => {
+    setIsLoading(true);
+    try {
+      const url = `http://localhost:4000/api/game/user-games?userId=${encodeURIComponent(user.userId)}`;
+      console.log('Fetching games from:', url);
+      const response = await fetch(url);
+      const gamesList = await response.json();
+      console.log('Games response:', gamesList);
+      if (response.ok && Array.isArray(gamesList)) {
+        setGames(gamesList.map((game: Game) => {
+          let status: 'your-turn' | 'waiting' | 'finished';
+          
+          if (game.status === 'finished') {
+            status = 'finished';
+          } else if (game.status === 'lobby') {
+            status = 'waiting';
+          } else if (game.status === 'active') {
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            status = currentPlayer?.userId === user.userId ? 'your-turn' : 'waiting';
+          } else {
+            status = 'waiting';
+          }
+          
+          return { game, status };
+        }));
+      } else {
+        console.error('Response not ok or not array:', response.ok, Array.isArray(gamesList));
+      }
+    } catch (err) {
+      console.error('Failed to fetch games:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGames();
+    const interval = setInterval(fetchGames, 3000);
+    return () => clearInterval(interval);
+  }, [user.userId]);
+
   const getInitials = (name: string) => {
     return name.slice(0, 2).toUpperCase();
   };
 
   return (
     <div className="min-h-screen pb-8">
-      {/* Header */}
       <header 
         className="px-4 py-4 sticky top-0 z-10"
         style={{ 
@@ -66,18 +77,27 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           <div>
             <h2>Ecosystem</h2>
           </div>
-          <div 
-            className="avatar avatar-sm"
-            style={{ backgroundColor: 'var(--color-forest-600)', color: 'white' }}
-          >
-            <span className="text-sm">{getInitials(user.name)}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => fetchGames()}
+              className="button-icon"
+              style={{ color: 'var(--color-forest-600)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <RefreshCw size={20} />
+            </button>
+            <div 
+              className="avatar avatar-sm"
+              style={{ backgroundColor: 'var(--color-forest-600)', color: 'white' }}
+            >
+              <span className="text-sm">{getInitials(user.name)}</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="page-content">
-        {/* Action Buttons */}
         <div className="grid-2col mb-6">
           <button
             onClick={onCreateGame}
@@ -94,86 +114,93 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           </button>
         </div>
 
-        {/* Games List */}
         <div>
           <h3 className="mb-4 text-secondary">
             Your games
           </h3>
-          <div className="space-stack-sm">
-            {mockGames.map((game) => (
-              <button
-                key={game.id}
-                onClick={() => onJoinGame(game.id)}
-                className="card card-button"
-              >
-                <div className="flex-start justify-between mb-3">
-                  <div>
-                    <h3>{game.name}</h3>
-                    <p 
-                      className="text-sm text-muted"
-                    >
-                      {game.playerCount} players
-                    </p>
-                  </div>
-                  {game.status === 'your-turn' && (
-                    <span
-                      className="status-badge"
-                      style={{
-                        backgroundColor: 'var(--color-success)',
-                        color: 'white',
-                      }}
-                    >
-                      <span 
-                        className="status-badge-pulse"
-                        style={{ backgroundColor: 'white' }}
-                      />
-                      Your turn
-                    </span>
-                  )}
-                  {game.status === 'waiting' && (
-                    <span
-                      className="status-badge"
-                      style={{
-                        backgroundColor: 'var(--color-sage-200)',
-                        color: 'var(--color-forest-700)',
-                      }}
-                    >
-                      Waiting
-                    </span>
-                  )}
-                  {game.status === 'finished' && (
-                    <span
-                      className="status-badge"
-                      style={{
-                        backgroundColor: 'var(--color-earth-400)',
-                        color: 'white',
-                      }}
-                    >
-                      Finished
-                    </span>
-                  )}
-                </div>
-
-                {/* Player Avatars */}
-                <div className="avatar-row">
-                  {game.players.map((player, idx) => (
-                    <div
-                      key={idx}
-                      className="avatar avatar-xs"
-                      style={{
-                        backgroundColor: player === 'You' 
-                          ? 'var(--color-forest-600)' 
-                          : 'var(--color-sage-400)',
-                        color: 'white',
-                      }}
-                    >
-                      {getInitials(player)}
+          {isLoading ? (
+            <p>Loading games...</p>
+          ) : games.length === 0 ? (
+            <p style={{ color: 'var(--color-text-muted)' }}>
+              No active games. Create or join one to get started!
+            </p>
+          ) : (
+            <div className="space-stack-md">
+              {games.map(({ game, status }) => (
+                <button
+                  key={game.id}
+                  onClick={() => onJoinGame(game.id)}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
+                    <div>
+                      <h3 style={{ marginBottom: '0.25rem' }}>{game.name}</h3>
+                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                        {game.players.length} player{game.players.length !== 1 ? 's' : ''}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </button>
-            ))}
-          </div>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: 
+                          status === 'your-turn' ? 'var(--color-success)' :
+                          status === 'finished' ? 'var(--color-sage-300)' :
+                          'var(--color-sky-100)',
+                        color: 
+                          status === 'finished' ? 'var(--color-text-primary)' :
+                          status === 'your-turn' ? 'white' :
+                          'var(--color-sky-800)',
+                      }}
+                    >
+                      {status === 'your-turn' && <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '9999px', backgroundColor: 'white', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />}
+                      <span>
+                        {status === 'your-turn' ? 'Your turn' :
+                         status === 'finished' ? 'Finished' :
+                         'Waiting'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {game.players.map((player) => (
+                      <div
+                        key={player.userId}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '2rem',
+                          height: '2rem',
+                          borderRadius: '0.5rem',
+                          backgroundColor: player.userId === user.userId 
+                            ? 'var(--color-forest-600)' 
+                            : 'var(--color-sky-500)',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold',
+                        }}
+                        title={player.name}
+                      >
+                        {player.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

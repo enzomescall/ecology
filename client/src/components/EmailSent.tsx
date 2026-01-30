@@ -7,6 +7,18 @@ interface EmailSentProps {
 }
 
 export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
+  const handleLogin = () => {
+    // In real app, this would verify the email first
+    // For now, create a userId and save to localStorage
+    const userId = 'user-' + Math.random().toString(36).substring(7);
+    const name = localStorage.getItem('playerName') || 'Player';
+    
+    const user = { userId, email, name };
+    localStorage.setItem('gameUser', JSON.stringify(user));
+    
+    onLogin();
+  };
+
   return (
     <div className="page-container">
       <div className="page-constraint text-center">
@@ -56,7 +68,7 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
             Demo mode:
           </p>
           <button
-            onClick={onLogin}
+            onClick={handleLogin}
             className="text-sm px-4 py-2 rounded"
             style={{
               color: 'var(--color-sage-600)',

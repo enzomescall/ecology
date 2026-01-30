@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, TreeDeciduous, TreePine, Bird, Fish, Bug, Flower, Leaf, Sprout } from 'lucide-react';
+import { getGameState, submitMove, debugActivateGame } from '../services/gameApi';
+import type { Game, } from '../services/gameApi';
+import type { User } from '../App';
 
 interface Card {
   id: string;
@@ -9,21 +12,14 @@ interface Card {
   value: number;
 }
 
-interface Player {
-  id: string;
-  name: string;
-  isCurrentTurn: boolean;
-  grid: (Card | null)[][];
-}
-
 interface GameBoardProps {
   gameId: string;
-  user: { email: string; name: string };
+  user: User;
   onBack: () => void;
   onGameEnd: () => void;
 }
 
-// Mock data
+// Mock hand for now
 const mockHand: Card[] = [
   { id: '1', type: 'tree', icon: 'deciduous', color: 'var(--color-forest-600)', value: 3 },
   { id: '2', type: 'animal', icon: 'bird', color: 'var(--color-sky-500)', value: 2 },
@@ -44,43 +40,106 @@ const iconMap = {
 };
 
 export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
+  const [game, setGame] = useState<Game | null>(null);
+  const [isCurrentPlayer, setIsCurrentPlayer] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
-  const [isMyTurn] = useState(true); // Toggle to see waiting state
   
-  // Mock player grid (4 rows x 5 cols)
+  // Player grid (4 rows x 5 cols)
   const [grid, setGrid] = useState<(Card | null)[][]>(
     Array(4).fill(null).map(() => Array(5).fill(null))
   );
 
-  // Mock opponents
-  const opponents = [
-    { id: '2', name: 'Alex', isCurrentTurn: false },
-    { id: '3', name: 'Jordan', isCurrentTurn: false },
-  ];
+  // Reconstruct grid from game moves
+  const reconstructGrid = (gameData: Game) => {
+    const newGrid = Array(4).fill(null).map(() => Array(5).fill(null));
+    
+    gameData.moves.forEach((move) => {
+      const moveData = move.moveData as any;
+      if (moveData.row !== undefined && moveData.col !== undefined && moveData.cardId !== undefined) {
+        // Find the card by id from mockHand (or backend if available)
+        const card = mockHand.find(c => c.id === moveData.cardId);
+        if (card) {
+          newGrid[moveData.row][moveData.col] = card;
+        }
+      }
+    });
+    
+    return newGrid;
+  };
+
+  // Poll for game state updates
+  useEffect(() => {
+    const fetchGameState = async () => {
+      try {
+        const { game: updatedGame, isCurrentPlayer: isCurrent } = await getGameState(gameId, user.userId);
+        setGame(updatedGame);
+        setIsCurrentPlayer(isCurrent);
+        
+        // Reconstruct grid from moves
+        const newGrid = reconstructGrid(updatedGame);
+        setGrid(newGrid);
+        
+        setError('');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load game');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGameState();
+    const interval = setInterval(fetchGameState, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
+  }, [gameId, user.userId]);
 
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
 
   const handleCellClick = (row: number, col: number) => {
-    if (!isMyTurn || !selectedCard) return;
-    if (grid[row][col] !== null) return; // Cell already occupied
-    
+    if (!isCurrentPlayer || !selectedCard) return;
+    if (grid[row][col] !== null) return;
     setSelectedCell({ row, col });
   };
 
-  const handlePlaceCard = () => {
-    if (!selectedCard || !selectedCell) return;
+  const handlePlaceCard = async () => {
+    if (!selectedCard || !selectedCell || !game) return;
     
-    const newGrid = grid.map(row => [...row]);
-    newGrid[selectedCell.row][selectedCell.col] = selectedCard;
-    setGrid(newGrid);
-    setSelectedCard(null);
-    setSelectedCell(null);
-    
-    // In real app, this would submit the move and switch turns
+    try {
+      const moveData = {
+        row: selectedCell.row,
+        col: selectedCell.col,
+        cardId: selectedCard.id,
+      };
+      
+      await submitMove(gameId, user.userId, moveData);
+      // Grid will be reconstructed from backend moves on next poll
+      setSelectedCard(null);
+      setSelectedCell(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit move');
+    }
   };
 
-  const canPlaceCard = selectedCard && selectedCell;
+  if (isLoading) {
+    return (
+      <div className="page-container flex-center">
+        <p>Loading game...</p>
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="page-container flex-center">
+        <p>{error || 'Game not found'}</p>
+      </div>
+    );
+  }
+
+  const currentPlayer = game.players[game.currentPlayerIndex];
+  const canPlaceCard = selectedCard && selectedCell && isCurrentPlayer;
 
   return (
     <div className="min-h-screen pb-24">
@@ -97,9 +156,9 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             >
               <ArrowLeft size={20} />
             </button>
-            <h3>Forest Friends</h3>
+            <h3>{game.name}</h3>
           </div>
-          {isMyTurn ? (
+          {isCurrentPlayer ? (
             <div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg"
               style={{ backgroundColor: 'var(--color-success)', color: 'white' }}
@@ -112,8 +171,25 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
               className="inline-flex px-3 py-1.5 rounded-lg"
               style={{ backgroundColor: 'var(--color-sage-200)', color: 'var(--color-forest-700)' }}
             >
-              <span className="text-sm">Waiting for others</span>
+              <span className="text-sm">Waiting for {currentPlayer?.name}</span>
             </div>
+          )}
+          {/* DEBUG: Force game active button */}
+          {game.status !== 'active' && (
+            <button
+              onClick={async () => {
+                try {
+                  const updatedGame = await debugActivateGame(gameId);
+                  setGame(updatedGame);
+                } catch (err) {
+                  alert('Debug: Failed to activate game');
+                }
+              }}
+              className="px-2 py-1 text-xs rounded"
+              style={{ backgroundColor: 'var(--color-amber-500)', color: 'white' }}
+            >
+              DEBUG: Activate
+            </button>
           )}
         </div>
       </header>
@@ -123,40 +199,55 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         {/* Opponent Summary */}
         <div className="mb-4">
           <div className="flex gap-2">
-            {opponents.map((opponent) => (
-              <div
-                key={opponent.id}
-                className="card flex items-center gap-2"
-                style={{
-                  backgroundColor: 'var(--color-sage-100)',
-                  border: '1px solid var(--color-border)',
-                  padding: '0.75rem',
-                }}
-              >
+            {game.players.map((player, idx) => (
+              player.userId !== user.userId && (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                  key={player.userId}
+                  className="card flex items-center gap-2"
                   style={{
-                    backgroundColor: 'var(--color-sage-400)',
-                    color: 'white',
+                    backgroundColor: 'var(--color-sage-100)',
+                    border: '1px solid var(--color-border)',
+                    padding: '0.75rem',
                   }}
                 >
-                  {getInitials(opponent.name)}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                    style={{
+                      backgroundColor: 'var(--color-sage-400)',
+                      color: 'white',
+                    }}
+                  >
+                    {getInitials(player.name)}
+                  </div>
+                  <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    {player.name}
+                  </span>
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{
+                      backgroundColor: idx === game.currentPlayerIndex
+                        ? 'var(--color-success)' 
+                        : 'var(--color-sage-400)',
+                    }}
+                  />
                 </div>
-                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {opponent.name}
-                </span>
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{
-                    backgroundColor: opponent.isCurrentTurn 
-                      ? 'var(--color-success)' 
-                      : 'var(--color-sage-400)',
-                  }}
-                />
-              </div>
+              )
             ))}
           </div>
         </div>
+
+        {/* Game Status */}
+        {error && (
+          <div 
+            className="p-4 rounded-lg mb-4"
+            style={{ 
+              backgroundColor: 'var(--color-error-light)',
+              color: 'var(--color-error)',
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {/* Player Grid */}
         <div 
@@ -174,7 +265,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                 <button
                   key={`${rowIdx}-${colIdx}`}
                   onClick={() => handleCellClick(rowIdx, colIdx)}
-                  disabled={!isMyTurn || !selectedCard || card !== null}
+                  disabled={!isCurrentPlayer || !selectedCard || card !== null}
                   className="aspect-square rounded-lg transition-all disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: card 
@@ -187,7 +278,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                         ? 'var(--color-forest-600)'
                         : 'var(--color-border)'
                     }`,
-                    opacity: !isMyTurn || (selectedCard && card === null) ? 1 : card ? 1 : 0.6,
+                    opacity: !isCurrentPlayer || (selectedCard && card === null) ? 1 : card ? 1 : 0.6,
                   }}
                 >
                   {card && (
@@ -205,7 +296,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         </div>
 
         {/* Hand */}
-        {isMyTurn && (
+        {isCurrentPlayer && (
           <div>
             <h3 className="mb-3" style={{ color: 'var(--color-text-secondary)' }}>
               Your cards
@@ -238,7 +329,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         )}
 
         {/* Waiting State */}
-        {!isMyTurn && (
+        {!isCurrentPlayer && (
           <div 
             className="card text-center py-12"
             style={{
@@ -257,7 +348,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
       </main>
 
       {/* Bottom Action Bar */}
-      {isMyTurn && (
+      {isCurrentPlayer && (
         <div 
           className="fixed bottom-0 left-0 right-0 p-4"
           style={{

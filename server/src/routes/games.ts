@@ -18,14 +18,14 @@ const router = Router();
 // Validation schemas
 const createGameSchema = z.object({
   userId: z.string().min(1),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().min(1),
   gameName: z.string().optional(),
 });
 
 const joinGameSchema = z.object({
   userId: z.string().min(1),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().min(1),
 });
 
@@ -45,7 +45,8 @@ router.post('/', (req, res) => {
     const game = gameService.createGame(
       validated.userId,
       validated.email,
-      validated.name
+      validated.name,
+      validated.gameName
     );
     res.status(201).json(game);
   } catch (err) {
@@ -85,6 +86,21 @@ router.post('/:id/start', (req, res) => {
     if (err instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request', issues: err.issues });
     }
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+// GET /user-games - List games for a user
+router.get('/user-games', (req, res) => {
+  try {
+    const userId = req.query.userId as string;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query param required' });
+    }
+
+    const games = gameService.getUserGames(userId);
+    res.json(games);
+  } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }
 });
@@ -132,6 +148,26 @@ router.post('/:id/finish', (req, res) => {
     if (err instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request', issues: err.issues });
     }
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+// DEBUG: POST /games/:id/debug/activate - Force game to active (development only)
+router.post('/:id/debug/activate', (req, res) => {
+  try {
+    const game = gameService.debugActivateGame(req.params.id);
+    res.json(game);
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+// DEBUG: GET /debug/data - View all games in memory (development only)
+router.get('/debug/all-data', (req, res) => {
+  try {
+    const allGames = gameService.debugGetAllGames();
+    res.json(allGames);
+  } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }
 });

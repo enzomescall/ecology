@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Landing } from './components/Landing';
 import { EmailSent } from './components/EmailSent';
 import { Home } from './components/Home';
@@ -6,16 +6,31 @@ import { CreateGame } from './components/CreateGame';
 import { GameBoard } from './components/GameBoard';
 import { EndGame } from './components/EndGame';
 
+export type User = { userId: string; email: string; name: string };
+
 export type Screen = 
   | { type: 'landing' }
   | { type: 'email-sent'; email: string }
-  | { type: 'home'; user: { email: string; name: string } }
-  | { type: 'create-game'; user: { email: string; name: string } }
-  | { type: 'game-board'; gameId: string; user: { email: string; name: string } }
-  | { type: 'end-game'; gameId: string; user: { email: string; name: string } };
+  | { type: 'home'; user: User }
+  | { type: 'create-game'; user: User }
+  | { type: 'game-board'; gameId: string; user: User }
+  | { type: 'end-game'; gameId: string; user: User };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'landing' });
+
+  // Load user from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('gameUser');
+    if (saved) {
+      try {
+        const user = JSON.parse(saved) as User;
+        setScreen({ type: 'home', user });
+      } catch {
+        // Invalid stored data, start from landing
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -26,7 +41,13 @@ export default function App() {
         <EmailSent 
           email={screen.email} 
           onResend={() => {}}
-          onLogin={() => setScreen({ type: 'home', user: { email: screen.email, name: 'Player' } })}
+          onLogin={() => {
+            const name = localStorage.getItem('playerName') || 'Player';
+            const userId = 'user-' + Math.random().toString(36).substring(7);
+            const user: User = { userId, email: screen.email, name };
+            localStorage.setItem('gameUser', JSON.stringify(user));
+            setScreen({ type: 'home', user });
+          }}
         />
       )}
       {screen.type === 'home' && (

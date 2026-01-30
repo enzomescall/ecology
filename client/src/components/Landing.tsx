@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
 
 interface LandingProps {
   onEmailSubmit: (email: string) => void;
@@ -7,10 +7,13 @@ interface LandingProps {
 
 export function Landing({ onEmailSubmit }: LandingProps) {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
+    if (email.trim() && name.trim()) {
+      // Store name for next screen
+      localStorage.setItem('playerName', name.trim());
       onEmailSubmit(email.trim());
     }
   };
@@ -72,6 +75,38 @@ export function Landing({ onEmailSubmit }: LandingProps) {
         <form onSubmit={handleSubmit} className="form-group stacked">
           <div>
             <label 
+              htmlFor="name" 
+              className="form-label"
+            >
+              Your name
+            </label>
+            <div className="form-input-wrapper">
+              <User 
+                className="form-input-icon" 
+                size={20}
+                style={{ color: 'var(--color-sage-600)' }}
+              />
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                required
+                className="form-input form-input-with-icon"
+                style={{
+                  backgroundColor: 'var(--color-bg-card)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--color-border-focus)'}
+                onBlur={(e) => e.target.style.borderColor = 'var(--color-border)'}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label 
               htmlFor="email" 
               className="form-label"
             >
@@ -104,15 +139,20 @@ export function Landing({ onEmailSubmit }: LandingProps) {
 
           <button
             type="submit"
+            disabled={!email.trim() || !name.trim()}
             className="button-primary mt-8 mb-8"
+            style={{
+              opacity: (!email.trim() || !name.trim()) ? 0.5 : 1,
+              cursor: (!email.trim() || !name.trim()) ? 'not-allowed' : 'pointer',
+            }}
           >
-            Send login link
+            Continue
           </button>
 
           <p 
             className="text-sm text-center text-muted"
           >
-            No passwords. We'll email you a magic link.
+            No passwords. We'll verify your email with a magic link.
           </p>
         </form>
       </div>

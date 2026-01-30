@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { createGame } from '../services/gameApi';
+import type { User } from '../App';
 
 interface CreateGameProps {
-  user: { email: string; name: string };
+  user: User;
   onBack: () => void;
   onCreate: (gameId: string) => void;
 }
@@ -10,6 +12,8 @@ interface CreateGameProps {
 export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
   const [gameName, setGameName] = useState('');
   const [invites, setInvites] = useState<string[]>(['']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const addInviteField = () => {
     setInvites([...invites, '']);
@@ -25,14 +29,34 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
     setInvites(newInvites);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    setError('');
+    setIsLoading(true);
+    
+    // Check if we have at least 2 players (host + at least 1 invite)
     const validInvites = invites.filter(email => email.trim());
-    if (validInvites.length > 0) {
-      onCreate('new-game-' + Date.now());
+    if (validInvites.length === 0) {
+      setError('Add at least one player invite to create a game');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const game = await createGame(
+        user.userId,
+        user.email,
+        user.name,
+        gameName || undefined
+      );
+      onCreate(game.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create game');
+      setIsLoading(false);
     }
   };
 
-  const canCreate = invites.some(email => email.trim());
+  const validInvites = invites.filter(email => email.trim());
+  const canCreate = validInvites.length > 0; // Require at least one invite to start with 2 players
 
   return (
     <div className="min-h-screen">
@@ -167,12 +191,24 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
               They'll need to sign in to play.
             </p>
           </div>
+
+          {error && (
+            <div 
+              className="p-4 rounded-lg mt-4"
+              style={{ 
+                backgroundColor: 'var(--color-error-light)',
+                color: 'var(--color-error)',
+              }}
+            >
+              {error}
+            </div>
+          )}
         </div>
       </main>
 
       {/* Bottom Action */}
       <div 
-        className="fixed bottom-0 left-0 right-0 p-4"
+        className="fixed bottom-0 left-4 right-0 p-4"
         style={{
           backgroundColor: 'var(--color-bg-card)',
           borderTop: '1px solid var(--color-border)',
@@ -182,23 +218,23 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
         <div className="max-w-2xl mx-auto">
           <button
             onClick={handleCreate}
-            disabled={!canCreate}
+            disabled={!canCreate || isLoading}
             className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: canCreate ? 'var(--color-forest-600)' : 'var(--color-sage-400)',
+              backgroundColor: (canCreate && !isLoading) ? 'var(--color-forest-600)' : 'var(--color-sage-400)',
             }}
             onMouseEnter={(e) => {
-              if (canCreate) {
+              if (canCreate && !isLoading) {
                 e.currentTarget.style.backgroundColor = 'var(--color-forest-700)';
               }
             }}
             onMouseLeave={(e) => {
-              if (canCreate) {
+              if (canCreate && !isLoading) {
                 e.currentTarget.style.backgroundColor = 'var(--color-forest-600)';
               }
             }}
           >
-            Create game
+            {isLoading ? 'Creating...' : 'Create game'}
           </button>
         </div>
       </div>
