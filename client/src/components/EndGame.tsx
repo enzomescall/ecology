@@ -1,204 +1,87 @@
-import { useState } from 'react';
-import { Trophy, ChevronDown, ChevronUp, Home, Plus } from 'lucide-react';
-
-interface PlayerScore {
-  name: string;
-  rank: number;
-  totalScore: number;
-  breakdown: {
-    trees: number;
-    animals: number;
-    plants: number;
-    bonus: number;
-  };
-}
+import { useState, useEffect } from 'react';
+import { getGameState, ScoreBreakdown } from '../services/gameApi';
 
 interface EndGameProps {
   gameId: string;
-  user: { email: string; name: string };
+  user: { userId: string; email: string; name: string };
   onReturnHome: () => void;
   onNewGame: () => void;
 }
 
-const mockScores: PlayerScore[] = [
-  {
-    name: 'You',
-    rank: 1,
-    totalScore: 42,
-    breakdown: { trees: 15, animals: 12, plants: 10, bonus: 5 },
-  },
-  {
-    name: 'Jordan',
-    rank: 2,
-    totalScore: 38,
-    breakdown: { trees: 12, animals: 14, plants: 8, bonus: 4 },
-  },
-  {
-    name: 'Alex',
-    rank: 3,
-    totalScore: 35,
-    breakdown: { trees: 10, animals: 11, plants: 12, bonus: 2 },
-  },
-];
+const CATEGORIES = ['stream', 'meadow', 'wolf', 'fox', 'bear', 'trout', 'dragonfly', 'bee', 'eagle', 'deer'] as const;
+
+interface PlayerRanking {
+  userId: string;
+  name: string;
+  score: ScoreBreakdown;
+}
 
 export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps) {
+  const [rankings, setRankings] = useState<PlayerRanking[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
+  useEffect(() => {
+    getGameState(gameId, user.userId)
+      .then(({ game, scores }) => {
+        if (!scores) return;
+        const ranked = game.players
+          .filter((p) => !p.leftGame)
+          .map((p) => ({ userId: p.userId, name: p.name, score: scores[p.userId] }))
+          .sort((a, b) => b.score.total - a.score.total);
+        setRankings(ranked);
+      })
+      .catch((e) => setError(e.message));
+  }, [gameId, user.userId]);
 
-  const getRankColor = (rank: number) => {
-    if (rank === 1) return 'var(--color-amber-500)';
-    if (rank === 2) return 'var(--color-sage-600)';
-    if (rank === 3) return 'var(--color-earth-500)';
-    return 'var(--color-sage-400)';
-  };
+  const rankLabel = (i: number) => ['1st', '2nd', '3rd'][i] ?? `${i + 1}th`;
 
-  const toggleExpanded = (name: string) => {
-    setExpandedPlayer(expandedPlayer === name ? null : name);
-  };
+  if (error) return <div className="page-content"><p className="text-error">{error}</p></div>;
 
   return (
     <div className="min-h-screen pb-8">
-      {/* Header */}
       <header className="card-header text-center">
-        <div className="max-w-2xl mx-auto">
-          <div 
-            className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-            style={{ backgroundColor: 'var(--color-amber-500)' }}
-          >
-            <Trophy size={32} color="white" />
-          </div>
-          <h1>Game Over</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>
-            Forest Friends
-          </p>
-        </div>
+        <h1>Game Over</h1>
       </header>
 
-      {/* Main Content */}
       <main className="page-content">
-        <h3 className="mb-4" style={{ color: 'var(--color-text-secondary)' }}>
-          Final Rankings
-        </h3>
+        <h3 className="mb-4">Final Rankings</h3>
 
         <div className="space-stack-md">
-          {mockScores.map((player) => {
-            const isExpanded = expandedPlayer === player.name;
+          {rankings.map((player, i) => {
+            const isMe = player.userId === user.userId;
+            const isExpanded = expandedPlayer === player.userId;
             return (
-              <div
-                key={player.name}
-                className="card rounded-xl overflow-hidden"
-                style={{
-                  backgroundColor: 'var(--color-bg-card)',
-                  border: '2px solid var(--color-border)',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
+              <div key={player.userId} className="card" style={{ border: isMe ? '2px solid var(--color-forest-600)' : undefined }}>
                 <button
-                  onClick={() => toggleExpanded(player.name)}
-                  className="card-button w-full p-4 flex items-center gap-4 transition-colors"
-                  style={{
-                    backgroundColor: player.name === 'You' 
-                      ? 'var(--color-sage-100)' 
-                      : 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (player.name !== 'You') {
-                      e.currentTarget.style.backgroundColor = 'var(--color-sage-100)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (player.name !== 'You') {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
+                  className="card-button w-full p-4 flex items-center gap-4"
+                  onClick={() => setExpandedPlayer(isExpanded ? null : player.userId)}
                 >
-                  {/* Rank Badge */}
-                  <div
-                    className="rank-badge"
-                    style={{
-                      backgroundColor: getRankColor(player.rank),
-                      color: 'white',
-                      width: '3rem',
-                      height: '3rem',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {player.rank === 1 && <Trophy size={24} />}
-                    {player.rank !== 1 && <span>#{player.rank}</span>}
-                  </div>
-
-                  {/* Player Info */}
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3>{player.name}</h3>
-                      {player.name === 'You' && (
-                        <span
-                          className="label-badge text-xs px-2 py-0.5 rounded"
-                          style={{
-                            backgroundColor: 'var(--color-forest-600)',
-                            color: 'white',
-                          }}
-                        >
-                          You
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                      {player.totalScore} points
-                    </p>
-                  </div>
-
-                  {/* Expand Icon */}
-                  <div style={{ color: 'var(--color-sage-600)' }}>
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </div>
+                  <span className="rank-badge" style={{ fontWeight: 'bold', minWidth: '2.5rem' }}>
+                    {rankLabel(i)}
+                  </span>
+                  <span className="flex-1 text-left">
+                    <strong>{player.name}</strong>{isMe && ' (you)'}
+                  </span>
+                  <span>{player.score.total} pts</span>
                 </button>
 
-                {/* Expanded Breakdown */}
                 {isExpanded && (
-                  <div 
-                    className="px-4 pb-4 pt-2"
-                    style={{ borderTop: '1px solid var(--color-border)' }}
-                  >
-                    <p 
-                      className="text-sm mb-3"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                      Score breakdown
-                    </p>
-                    <div className="space-stack-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                          Trees
-                        </span>
-                        <span className="text-sm">{player.breakdown.trees} pts</span>
+                  <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+                    <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>Score breakdown</p>
+                    {CATEGORIES.map((cat) => (
+                      <div key={cat} className="flex justify-between text-sm py-1">
+                        <span>{cat}</span>
+                        <span>{player.score[cat]} pts</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                          Animals
-                        </span>
-                        <span className="text-sm">{player.breakdown.animals} pts</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                          Plants
-                        </span>
-                        <span className="text-sm">{player.breakdown.plants} pts</span>
-                      </div>
-                      <div 
-                        className="flex justify-between items-center pt-2"
-                        style={{ borderTop: '1px solid var(--color-border)' }}
-                      >
-                        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                          Bonus
-                        </span>
-                        <span className="text-sm">{player.breakdown.bonus} pts</span>
-                      </div>
+                    ))}
+                    <div className="flex justify-between text-sm py-1" style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-error, red)' }}>
+                      <span>diversity penalty</span>
+                      <span>{player.score.diversityPenalty} pts</span>
+                    </div>
+                    <div className="flex justify-between text-sm py-1 font-bold" style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <span>total</span>
+                      <span>{player.score.total} pts</span>
                     </div>
                   </div>
                 )}
@@ -207,39 +90,9 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
           })}
         </div>
 
-        {/* Actions */}
         <div className="mt-8 space-stack-sm">
-          <button
-            onClick={onNewGame}
-            className="button-primary"
-            style={{
-              backgroundColor: 'var(--color-forest-600)',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
-          >
-            <Plus size={20} />
-            Start new game
-          </button>
-          <button
-            onClick={onReturnHome}
-            className="button-secondary"
-            style={{
-              color: 'var(--color-forest-600)',
-              border: '2px solid var(--color-border)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-forest-600)';
-              e.currentTarget.style.backgroundColor = 'var(--color-sage-100)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-border)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <Home size={20} />
-            Return home
-          </button>
+          <button className="button-primary" onClick={onNewGame}>New Game</button>
+          <button className="button-secondary" onClick={onReturnHome}>Return Home</button>
         </div>
       </main>
     </div>

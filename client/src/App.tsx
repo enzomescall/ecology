@@ -38,16 +38,10 @@ export default function App() {
         <Landing onEmailSubmit={(email) => setScreen({ type: 'email-sent', email })} />
       )}
       {screen.type === 'email-sent' && (
-        <EmailSent 
-          email={screen.email} 
+        <EmailSent
+          email={screen.email}
           onResend={() => {}}
-          onLogin={() => {
-            const name = localStorage.getItem('playerName') || 'Player';
-            const userId = 'user-' + Math.random().toString(36).substring(7);
-            const user: User = { userId, email: screen.email, name };
-            localStorage.setItem('gameUser', JSON.stringify(user));
-            setScreen({ type: 'home', user });
-          }}
+          onLogin={(user) => setScreen({ type: 'home', user })}
         />
       )}
       {screen.type === 'home' && (

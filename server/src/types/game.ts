@@ -1,23 +1,34 @@
-/**
- * Core type definitions for the turn-based game system.
- * Independent of database implementation.
- */
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-}
-
-export type GameStatus = 'lobby' | 'active' | 'finished';
+import type { Card, CardType, Coord, PlacedCard } from './card.js';
 
 export interface GamePlayer {
   userId: string;
   email: string;
   name: string;
   joinedAt: Date;
-  score?: number;
-  left_game?: boolean;
+  leftGame?: boolean;
+}
+
+export type GameStatus = 'lobby' | 'active' | 'finished';
+
+export interface EcoMove {
+  cardId: string;
+  coord: Coord;
+  swap: { a: Coord; b: Coord } | null;
+}
+
+export interface ScoreBreakdown {
+  stream: number;
+  meadow: number;
+  wolf: number;
+  fox: number;
+  bear: number;
+  trout: number;
+  dragonfly: number;
+  bee: number;
+  eagle: number;
+  deer: number;
+  diversityPenalty: number;
+  total: number;
 }
 
 export interface Game {
@@ -25,30 +36,19 @@ export interface Game {
   hostUserId: string;
   name: string;
   status: GameStatus;
+  round: 1 | 2;
+  turn: number;
+  playerOrder: string[];
   players: GamePlayer[];
-  currentPlayerIndex: number;
-  turnNumber: number;
+  passDirection: 'left' | 'right';
+  handsByPlayerId: Record<string, Card[]>;
+  submittedMovesByPlayerId: Record<string, EcoMove>;
+  ecosystemsByPlayerId: Record<string, PlacedCard[]>;
+  scoresByPlayerId?: Record<string, ScoreBreakdown>;
+  deck: Card[];
   createdAt: Date;
   startedAt?: Date;
   finishedAt?: Date;
-  moves: GameMove[];
-}
-
-export interface GameMove {
-  id: string;
-  gameId: string;
-  playerId: string;
-  turnNumber: number;
-  moveData: Record<string, unknown>;
-  submittedAt: Date;
-}
-
-export interface TurnState {
-  gameId: string;
-  currentPlayerIndex: number;
-  currentPlayerId: string;
-  turnNumber: number;
-  isGameActive: boolean;
 }
 
 export interface CreateGameRequest {
@@ -65,26 +65,20 @@ export interface JoinGameRequest {
   name: string;
 }
 
-export interface StartGameRequest {
-  gameId: string;
-  userId: string;
-}
-
-export interface SubmitMoveRequest {
-  gameId: string;
-  userId: string;
-  moveData: Record<string, unknown>;
-}
-
 export interface GameStateResponse {
-  game: Game;
-  turnState: TurnState;
-  isCurrentPlayer: boolean;
-}
-
-export interface MoveResponse {
-  success: boolean;
-  message: string;
-  game?: Game;
-  turnState?: TurnState;
+  game: {
+    id: string;
+    name: string;
+    status: GameStatus;
+    round: 1 | 2;
+    turn: number;
+    playerOrder: string[];
+    players: GamePlayer[];
+  };
+  hand: Card[];
+  ecosystem: PlacedCard[];
+  opponentEcosystems: Record<string, PlacedCard[]>;
+  hasSubmitted: boolean;
+  waitingFor: string[];
+  scores?: Record<string, ScoreBreakdown>;
 }

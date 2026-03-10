@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, User } from 'lucide-react';
+import { sendAuthCode } from '../services/gameApi';
 
 interface LandingProps {
   onEmailSubmit: (email: string) => void;
@@ -8,13 +9,23 @@ interface LandingProps {
 export function Landing({ onEmailSubmit }: LandingProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && name.trim()) {
-      // Store name for next screen
+    if (!email.trim() || !name.trim()) return;
+
+    setLoading(true);
+    setError('');
+    try {
       localStorage.setItem('playerName', name.trim());
+      await sendAuthCode(email.trim(), name.trim());
       onEmailSubmit(email.trim());
+    } catch {
+      setError('Failed to send code. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -137,22 +148,28 @@ export function Landing({ onEmailSubmit }: LandingProps) {
             </div>
           </div>
 
+          {error && (
+            <p className="text-sm text-center" style={{ color: 'var(--color-error, #dc2626)' }}>
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
-            disabled={!email.trim() || !name.trim()}
+            disabled={!email.trim() || !name.trim() || loading}
             className="button-primary mt-8 mb-8"
             style={{
-              opacity: (!email.trim() || !name.trim()) ? 0.5 : 1,
-              cursor: (!email.trim() || !name.trim()) ? 'not-allowed' : 'pointer',
+              opacity: (!email.trim() || !name.trim() || loading) ? 0.5 : 1,
+              cursor: (!email.trim() || !name.trim() || loading) ? 'not-allowed' : 'pointer',
             }}
           >
-            Continue
+            {loading ? 'Sending...' : 'Continue'}
           </button>
 
-          <p 
+          <p
             className="text-sm text-center text-muted"
           >
-            No passwords. We'll verify your email with a magic link.
+            No passwords. We'll send you a one-time code.
           </p>
         </form>
       </div>

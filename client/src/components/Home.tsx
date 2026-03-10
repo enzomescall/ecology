@@ -1,7 +1,7 @@
-import { Plus, LogIn, User, RefreshCw } from 'lucide-react';
+import { Plus, LogIn, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '../App';
-import type { Game } from '../services/gameApi';
+import type { GameSummary as Game } from '../services/gameApi';
 
 interface GameDisplay {
   game: Game;
@@ -38,11 +38,6 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           
           if (game.status === 'finished') {
             status = 'finished';
-          } else if (game.status === 'lobby') {
-            status = 'waiting';
-          } else if (game.status === 'active') {
-            const currentPlayer = game.players[game.currentPlayerIndex];
-            status = currentPlayer?.userId === user.userId ? 'your-turn' : 'waiting';
           } else {
             status = 'waiting';
           }
@@ -71,46 +66,21 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
   return (
     <div className="min-h-screen pb-8">
-      <header 
-        className="px-4 py-4 sticky top-0 z-10"
-        style={{ 
-          backgroundColor: 'var(--color-bg-card)',
-          borderBottom: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div className="max-w-2xl mx-auto flex-between">
-          <div>
-            <h2>Ecosystem</h2>
-          </div>
-          <div className="flex items-center gap-3">
+      <header className="page-header">
+        <div className="page-header-content">
+          <h2>Ecosystem</h2>
+          <div className="flex-between" style={{ gap: '0.5rem' }}>
             <button
               onClick={() => fetchGames()}
               className="button-icon"
               style={{ color: 'var(--color-forest-600)' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <RefreshCw size={20} />
             </button>
             <button
               onClick={() => setShowUserModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '2.5rem',
-                height: '2.5rem',
-                borderRadius: '0.5rem',
-                backgroundColor: 'var(--color-forest-600)',
-                color: 'white',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 'bold',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-700)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-forest-600)'}
+              className="avatar-sm"
+              style={{ backgroundColor: 'var(--color-forest-600)', border: 'none', cursor: 'pointer' }}
               title="User profile"
             >
               {getInitials(user.name)}
