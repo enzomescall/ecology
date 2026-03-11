@@ -1,4 +1,5 @@
 import { getOrCreateUser } from "../data/userStore.js";
+import { sendOTCEmail } from "./emailService.js";
 
 interface OTCEntry {
   code: string;
@@ -8,10 +9,11 @@ interface OTCEntry {
 
 const otcStore = new Map<string, OTCEntry>();
 
-export function generateOTC(email: string, name: string): string {
+export async function generateOTC(email: string, name: string): Promise<string> {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   otcStore.set(email, { code, name, expiresAt: new Date(Date.now() + 15 * 60 * 1000) });
   console.log(`[DEV] OTC for ${email}: ${code}`);
+  await sendOTCEmail(email, code);
   return code;
 }
 

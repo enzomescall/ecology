@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getGameState, ScoreBreakdown } from '../services/gameApi';
+import { getGameState } from '../services/gameApi';
+import type { ScoreBreakdown } from '../services/gameApi';
 
 interface EndGameProps {
   gameId: string;

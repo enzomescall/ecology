@@ -1,7 +1,9 @@
-import { Plus, LogIn, RefreshCw } from 'lucide-react';
+import { Plus, LogIn, RefreshCw, EyeOff, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '../App';
 import type { GameSummary as Game } from '../services/gameApi';
+import { getInvites, acceptInvite, declineInvite } from '../services/gameApi';
+import type { Invite } from '../services/gameApi';
 
 interface GameDisplay {
   game: Game;
@@ -23,6 +25,8 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editedName, setEditedName] = useState(user.name);
   const [isSaving, setIsSaving] = useState(false);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [hideFinished, setHideFinished] = useState(false);
 
   const fetchGames = async () => {
     setIsLoading(true);
@@ -54,9 +58,38 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
     }
   };
 
+  const fetchInvites = async () => {
+    try {
+      const list = await getInvites(user.email);
+      setInvites(list);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAcceptInvite = async (invite: Invite) => {
+    try {
+      await acceptInvite(invite.id, user.userId, user.email, user.name);
+      await fetchInvites();
+      await fetchGames();
+    } catch (err) {
+      console.error('Failed to accept invite:', err);
+    }
+  };
+
+  const handleDeclineInvite = async (invite: Invite) => {
+    try {
+      await declineInvite(invite.id);
+      await fetchInvites();
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     fetchGames();
-    const interval = setInterval(fetchGames, 30000);
+    fetchInvites();
+    const interval = setInterval(() => { fetchGames(); fetchInvites(); }, 30000);
     return () => clearInterval(interval);
   }, [user.userId]);
 
@@ -107,10 +140,64 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           </button>
         </div>
 
+        {/* Pending Invites */}
+        {invites.length > 0 && (
+          <div className="mb-6">
+            <h3 className="mb-3 text-secondary">Pending invites</h3>
+            <div className="space-stack-sm">
+              {invites.map(invite => (
+                <div
+                  key={invite.id}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: 'var(--color-sage-100)',
+                    border: '1px solid var(--color-sage-300)',
+                    borderRadius: 'var(--radius-lg)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{invite.gameName}</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                      Invited by {invite.invitedByName}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleAcceptInvite(invite)}
+                      className="button-primary"
+                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.875rem' }}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleDeclineInvite(invite)}
+                      className="button-secondary"
+                      style={{ padding: '0.375rem 0.75rem', fontSize: '0.875rem' }}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
-          <h3 className="mb-4 text-secondary">
-            Your games
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 className="text-secondary" style={{ margin: 0 }}>Your games</h3>
+            <button
+              onClick={() => setHideFinished(!hideFinished)}
+              className="button-ghost"
+              style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', gap: '0.25rem', color: 'var(--color-text-muted)' }}
+            >
+              {hideFinished ? <Eye size={14} /> : <EyeOff size={14} />}
+              {hideFinished ? 'Show finished' : 'Hide finished'}
+            </button>
+          </div>
           {isLoading ? (
             <p>Loading games...</p>
           ) : games.length === 0 ? (
@@ -119,7 +206,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             </p>
           ) : (
             <div className="space-stack-md">
-              {games.map(({ game, status }) => (
+              {games.filter(({ status }) => !hideFinished || status !== 'finished').map(({ game, status }) => (
                 <button
                   key={game.id}
                   onClick={() => onJoinGame(game.id)}

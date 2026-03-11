@@ -6,6 +6,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as gameService from '../services/gameService.js';
+import * as inviteStore from '../data/inviteStore.js';
+import { sendInviteEmail } from '../services/emailService.js';
 
 const router = Router();
 
@@ -18,6 +20,7 @@ const createGameSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
   gameName: z.string().optional(),
+  inviteEmails: z.array(z.string().email()).optional(),
 });
 
 const joinGameSchema = z.object({
@@ -40,10 +43,18 @@ const submitMoveSchema = z.object({
 // --- Routes ---
 
 // POST /games - Create game
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { userId, email, name, gameName } = createGameSchema.parse(req.body);
+    const { userId, email, name, gameName, inviteEmails } = createGameSchema.parse(req.body);
     const game = gameService.createGame(userId, email, name, gameName);
+
+    if (inviteEmails?.length) {
+      for (const invitedEmail of inviteEmails) {
+        inviteStore.createInvite(game.id, game.name, invitedEmail, name);
+        sendInviteEmail(invitedEmail, name, game.name).catch(() => {});
+      }
+    }
+
     res.status(201).json(game);
   } catch (err) {
     handleError(res, err);
@@ -111,6 +122,44 @@ router.post('/:id/leave', (req, res) => {
     const { userId } = userIdSchema.parse(req.body);
     const game = gameService.leaveGame(req.params.id, userId);
     res.json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+// GET /invites - List pending invites for a user by email
+router.get('/invites', (req, res) => {
+  try {
+    const email = req.query.email as string;
+    if (!email) return res.status(400).json({ error: 'email query param required' });
+    res.json(inviteStore.getInvitesForEmail(email));
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+// POST /invites/:id/accept - Accept an invite
+router.post('/invites/:id/accept', (req, res) => {
+  try {
+    const { userId, email, name } = joinGameSchema.parse(req.body);
+    const invite = inviteStore.getInvite(req.params.id);
+    if (!invite) return res.status(400).json({ error: 'Invite not found' });
+
+    const game = gameService.joinGame(invite.gameId, userId, email, name);
+    inviteStore.deleteInvite(invite.id);
+    res.json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+// POST /invites/:id/decline - Decline an invite
+router.post('/invites/:id/decline', (req, res) => {
+  try {
+    const invite = inviteStore.getInvite(req.params.id);
+    if (!invite) return res.status(400).json({ error: 'Invite not found' });
+    inviteStore.deleteInvite(invite.id);
+    res.json({ success: true });
   } catch (err) {
     handleError(res, err);
   }

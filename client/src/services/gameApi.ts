@@ -77,8 +77,8 @@ async function get<T>(url: string): Promise<T> {
   return data;
 }
 
-export const createGame = (userId: string, email: string, name: string, gameName?: string) =>
-  post<GameSummary>(`${BASE_URL}/`, { userId, email, name, gameName });
+export const createGame = (userId: string, email: string, name: string, gameName?: string, inviteEmails?: string[]) =>
+  post<GameSummary>(`${BASE_URL}/`, { userId, email, name, gameName, inviteEmails });
 
 export const joinGame = (gameId: string, userId: string, email: string, name: string) =>
   post<GameSummary>(`${BASE_URL}/${gameId}/join`, { userId, email, name });
@@ -109,3 +109,23 @@ export async function sendAuthCode(email: string, name: string): Promise<void> {
 
 export const verifyAuthCode = (email: string, code: string) =>
   post<{ userId: string; email: string; name: string }>(`${AUTH_URL}/verify`, { email, code });
+
+// Invites
+
+export interface Invite {
+  id: string;
+  gameId: string;
+  gameName: string;
+  invitedEmail: string;
+  invitedByName: string;
+  createdAt: string;
+}
+
+export const getInvites = (email: string) =>
+  get<Invite[]>(`${BASE_URL}/invites?email=${encodeURIComponent(email)}`);
+
+export const acceptInvite = (inviteId: string, userId: string, email: string, name: string) =>
+  post<GameSummary>(`${BASE_URL}/invites/${inviteId}/accept`, { userId, email, name });
+
+export const declineInvite = (inviteId: string) =>
+  post<{ success: boolean }>(`${BASE_URL}/invites/${inviteId}/decline`, {});

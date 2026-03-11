@@ -14,13 +14,13 @@ const verifySchema = z.object({
   code: z.string().length(6),
 });
 
-router.post("/send-code", (req, res) => {
+router.post("/send-code", async (req, res) => {
   const result = sendCodeSchema.safeParse(req.body);
   if (!result.success) {
     res.status(400).json({ error: "Invalid input", issues: result.error.issues });
     return;
   }
-  generateOTC(result.data.email, result.data.name);
+  await generateOTC(result.data.email, result.data.name);
   res.json({ success: true });
 });
 

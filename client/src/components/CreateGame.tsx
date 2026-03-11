@@ -46,7 +46,8 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
         user.userId,
         user.email,
         user.name,
-        gameName || undefined
+        gameName || undefined,
+        validInvites
       );
       onCreate(game.id);
     } catch (err) {
