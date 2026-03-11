@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, LogOut } from 'lucide-react';
-import { getGameState, submitMove, leaveGame } from '../services/gameApi';
+import { getGameState, submitMove, leaveGame, startGame } from '../services/gameApi';
 import type { Card, Coord, PlacedCard, GameStateResponse } from '../services/gameApi';
 import { CardTile } from './CardTile';
 import { EcosystemGrid } from './EcosystemGrid';
@@ -132,6 +132,80 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   }
 
   const { game, hand, ecosystem, opponentEcosystems, hasSubmitted, waitingFor } = gameState;
+  const isHost = game.players[0]?.userId === user.userId;
+
+  // --- Lobby View ---
+  if (game.status === 'lobby') {
+    const handleStart = async () => {
+      setIsSubmitting(true);
+      try {
+        await startGame(gameId, user.userId);
+        await fetchState();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to start game');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <div style={{ minHeight: '100vh' }}>
+        <header className="page-header">
+          <div className="page-header-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button onClick={onBack} className="button-icon button-icon-sm"
+                style={{ color: 'var(--color-forest-600)' }}>
+                <ArrowLeft size={20} />
+              </button>
+              <h3 style={{ margin: 0 }}>{game.name}</h3>
+            </div>
+            <span className="label-badge">Lobby</span>
+          </div>
+        </header>
+        <main className="page-content" style={{ textAlign: 'center' }}>
+          <h3 className="mb-4">Players ({game.players.length})</h3>
+          <div className="space-stack-sm mb-6">
+            {game.players.map(p => (
+              <div key={p.userId} style={{
+                padding: '0.75rem 1rem', backgroundColor: 'var(--color-bg-card)',
+                border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)',
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+              }}>
+                <div style={{
+                  width: '2rem', height: '2rem', borderRadius: '0.5rem',
+                  backgroundColor: p.userId === user.userId ? 'var(--color-forest-600)' : 'var(--color-sky-500)',
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: 'bold',
+                }}>
+                  {p.name.slice(0, 2).toUpperCase()}
+                </div>
+                <span>{p.name}{p.userId === user.userId ? ' (you)' : ''}</span>
+                {p.userId === game.players[0]?.userId && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>Host</span>
+                )}
+              </div>
+            ))}
+          </div>
+          {error && (
+            <p className="text-sm mb-4" style={{ color: 'var(--color-error)' }}>{error}</p>
+          )}
+          {isHost ? (
+            <button
+              className="button-primary"
+              onClick={handleStart}
+              disabled={game.players.length < 2 || isSubmitting}
+              style={{ opacity: game.players.length < 2 ? 0.5 : 1 }}
+            >
+              {isSubmitting ? 'Starting...' : game.players.length < 2 ? 'Need at least 2 players' : 'Start Game'}
+            </button>
+          ) : (
+            <p style={{ color: 'var(--color-text-muted)' }}>Waiting for host to start the game...</p>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   const canPlace = selectedCard && selectedCell && !hasSubmitted && !swapMode;
   const canSwap = swapMode && swapSelection.length === 2;
   const placements = selectedCard && !hasSubmitted ? validPlacements(ecosystem) : undefined;
