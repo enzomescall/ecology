@@ -94,6 +94,17 @@ router.get('/user-games', (req, res) => {
   }
 });
 
+// GET /invites - List pending invites for a user by email
+router.get('/invites', (req, res) => {
+  try {
+    const email = req.query.email as string;
+    if (!email) return res.status(400).json({ error: 'email query param required' });
+    res.json(inviteStore.getInvitesForEmail(email));
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
 // GET /games/:id - Get game state
 router.get('/:id', (req, res) => {
   try {
@@ -122,17 +133,6 @@ router.post('/:id/leave', (req, res) => {
     const { userId } = userIdSchema.parse(req.body);
     const game = gameService.leaveGame(req.params.id, userId);
     res.json(game);
-  } catch (err) {
-    handleError(res, err);
-  }
-});
-
-// GET /invites - List pending invites for a user by email
-router.get('/invites', (req, res) => {
-  try {
-    const email = req.query.email as string;
-    if (!email) return res.status(400).json({ error: 'email query param required' });
-    res.json(inviteStore.getInvitesForEmail(email));
   } catch (err) {
     handleError(res, err);
   }
