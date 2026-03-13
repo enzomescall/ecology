@@ -92,7 +92,14 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                     <strong>{player.name}</strong>
                   </span>
                   <span style={{ fontWeight: 600 }}>{player.score.total} pts</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
                 </button>
+                {!isExpanded && (
+                  <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--color-text-muted)', padding: '0 0 0.5rem', margin: 0, cursor: 'pointer' }}
+                    onClick={() => setExpandedPlayer(player.userId)}>
+                    Click for score breakdown
+                  </p>
+                )}
 
                 {isExpanded && (
                   <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid var(--color-border)' }}>
