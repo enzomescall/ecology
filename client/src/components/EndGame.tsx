@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getGameState } from '../services/gameApi';
-import type { ScoreBreakdown } from '../services/gameApi';
+import type { ScoreBreakdown, PlacedCard, CardType } from '../services/gameApi';
+import { computeCardScores } from '../services/cardScoring';
+import type { CardScore } from '../services/cardScoring';
+import { CardTile } from './CardTile';
 
 interface EndGameProps {
   gameId: string;
@@ -27,6 +30,7 @@ interface PlayerRanking {
   name: string;
   score: ScoreBreakdown;
   rank: number;
+  ecosystem: PlacedCard[];
 }
 
 function assignRanks(players: { userId: string; name: string; score: ScoreBreakdown }[]): PlayerRanking[] {
@@ -34,23 +38,154 @@ function assignRanks(players: { userId: string; name: string; score: ScoreBreakd
   let rank = 1;
   return sorted.map((p, i) => {
     if (i > 0 && sorted[i - 1]!.score.total !== p.score.total) rank = i + 1;
-    return { ...p, rank };
+    return { ...p, rank, ecosystem: [] };
   });
+}
+
+interface EcosystemBoardProps {
+  ecosystem: PlacedCard[];
+  cardScores: Map<string, CardScore>;
+}
+
+function EcosystemBoard({ ecosystem, cardScores }: EcosystemBoardProps) {
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+
+  if (ecosystem.length === 0) return <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem' }}>No cards placed</p>;
+
+  // Find grid bounds
+  const minX = Math.min(...ecosystem.map(p => p.coord.x));
+  const maxX = Math.max(...ecosystem.map(p => p.coord.x));
+  const minY = Math.min(...ecosystem.map(p => p.coord.y));
+  const maxY = Math.max(...ecosystem.map(p => p.coord.y));
+
+  const cols = maxX - minX + 1;
+  const rows = maxY - minY + 1;
+
+  const grid: (PlacedCard | null)[][] = Array.from({ length: rows }, () => Array(cols).fill(null));
+  for (const p of ecosystem) {
+    grid[p.coord.y - minY]![p.coord.x - minX] = p;
+  }
+
+  const cardKey = (x: number, y: number) => `${x + minX},${y + minY}`;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: 2,
+        width: 'fit-content',
+      }}>
+        {grid.map((row, y) =>
+          row.map((cell, x) => {
+            const key = cardKey(x, y);
+            const isHovered = hoveredCard === key;
+            return (
+              <div
+                key={key}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: cell ? undefined : 'var(--color-bg-primary)',
+                  border: cell ? `1px solid ${isHovered ? 'var(--color-forest-600)' : 'var(--color-border)'}` : '1px dashed var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: cell ? 'pointer' : undefined,
+                  transition: 'border-color 0.15s',
+                  position: 'relative',
+                }}
+                onMouseEnter={() => cell && setHoveredCard(key)}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                {cell && <CardTile type={cell.card.type} size="sm" />}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Tooltip */}
+      {hoveredCard && (() => {
+        const [hx, hy] = hoveredCard.split(',').map(Number);
+        const cell = ecosystem.find(p => p.coord.x === hx && p.coord.y === hy);
+        if (!cell) return null;
+        const score = cardScores.get(hoveredCard);
+        if (!score) return null;
+
+        return (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 8,
+            padding: '0.625rem 0.75rem',
+            backgroundColor: 'var(--color-bg-card)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            zIndex: 10,
+            minWidth: 200,
+            maxWidth: 280,
+          }}>
+            <p style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: '0.375rem', textTransform: 'capitalize' }}>
+              {cell.card.type}
+            </p>
+            {score.selfPoints > 0 && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-forest-600)', fontWeight: 600, marginBottom: '0.25rem' }}>
+                Earns: {score.selfPoints} pts
+              </p>
+            )}
+            {score.breakdown.length > 0 && (
+              <div style={{ marginBottom: score.givesTo.length > 0 ? '0.25rem' : 0 }}>
+                {score.breakdown.map((b, i) => (
+                  <p key={i} style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{b}</p>
+                ))}
+              </div>
+            )}
+            {score.givesTo.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.25rem', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', fontWeight: 600, marginBottom: '0.125rem' }}>Gives to others:</p>
+                {score.givesTo.map((g, i) => (
+                  <p key={i} style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{g}</p>
+                ))}
+              </div>
+            )}
+            {score.selfPoints === 0 && score.breakdown.length === 0 && score.givesTo.length === 0 && (
+              <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>No points</p>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+  );
 }
 
 export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps) {
   const [rankings, setRankings] = useState<PlayerRanking[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+  const [showBoard, setShowBoard] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     getGameState(gameId, user.userId)
-      .then(({ game, scores }) => {
+      .then(({ game, scores, ecosystem, opponentEcosystems }) => {
         if (!scores) return;
         const players = game.players
           .filter((p) => !p.leftGame)
           .map((p) => ({ userId: p.userId, name: p.name, score: scores[p.userId]! }));
-        setRankings(assignRanks(players));
+        const ranked = assignRanks(players);
+        // Attach ecosystems
+        for (const r of ranked) {
+          if (r.userId === user.userId) {
+            r.ecosystem = ecosystem;
+          } else {
+            // Find opponent ecosystem by userId
+            r.ecosystem = opponentEcosystems[r.userId] ?? [];
+          }
+        }
+        setRankings(ranked);
       })
       .catch((e) => setError(e.message));
   }, [gameId, user.userId]);
@@ -68,6 +203,8 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
           {rankings.map((player) => {
             const isMe = player.userId === user.userId;
             const isExpanded = expandedPlayer === player.userId;
+            const isBoardVisible = showBoard === player.userId;
+            const cardScores = computeCardScores(player.ecosystem);
             return (
               <div key={player.userId} className="card" style={{ border: isMe ? '2px solid var(--color-forest-600)' : undefined, overflow: 'hidden' }}>
                 {/* Rank number banner */}
@@ -90,6 +227,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                 >
                   <span className="flex-1">
                     <strong>{player.name}</strong>
+                    {isMe && <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}> (you)</span>}
                   </span>
                   <span style={{ fontWeight: 600 }}>{player.score.total} pts</span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
@@ -129,6 +267,34 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
                       <span>Total</span>
                       <span style={{ minWidth: '3rem', textAlign: 'right' }}>{player.score.total}</span>
                     </div>
+
+                    {/* Board toggle */}
+                    <button
+                      onClick={() => setShowBoard(isBoardVisible ? null : player.userId)}
+                      style={{
+                        width: '100%',
+                        marginTop: '0.75rem',
+                        padding: '0.5rem',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg-primary)',
+                        cursor: 'pointer',
+                        fontSize: '0.8125rem',
+                        fontWeight: 500,
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {isBoardVisible ? 'Hide Board' : 'View Board'}
+                    </button>
+
+                    {isBoardVisible && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                          Hover over cards to see scoring details
+                        </p>
+                        <EcosystemBoard ecosystem={player.ecosystem} cardScores={cardScores} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
