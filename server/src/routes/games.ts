@@ -1,17 +1,11 @@
-/**
- * GAME API ROUTES
- * HTTP endpoints for game management
- */
-
 import { Router } from 'express';
+import type { Response } from 'express';
 import { z } from 'zod';
 import * as gameService from '../services/gameService.js';
 import * as inviteStore from '../data/inviteStore.js';
 import { sendInviteEmail } from '../services/emailService.js';
 
 const router = Router();
-
-// --- Validation Schemas ---
 
 const coordSchema = z.object({ x: z.number(), y: z.number() });
 
@@ -40,9 +34,6 @@ const submitMoveSchema = z.object({
   swap: z.object({ a: coordSchema, b: coordSchema }).nullable(),
 });
 
-// --- Routes ---
-
-// POST /games - Create game
 router.post('/', async (req, res) => {
   try {
     const { userId, email, name, gameName, inviteEmails } = createGameSchema.parse(req.body);
@@ -61,7 +52,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// POST /games/:id/join - Join game
 router.post('/:id/join', (req, res) => {
   try {
     const { userId, email, name } = joinGameSchema.parse(req.body);
@@ -72,7 +62,6 @@ router.post('/:id/join', (req, res) => {
   }
 });
 
-// POST /games/:id/start - Start game
 router.post('/:id/start', (req, res) => {
   try {
     const { userId } = userIdSchema.parse(req.body);
@@ -83,7 +72,6 @@ router.post('/:id/start', (req, res) => {
   }
 });
 
-// GET /games/user-games - List games for a user
 router.get('/user-games', (req, res) => {
   try {
     const userId = req.query.userId as string;
@@ -94,7 +82,6 @@ router.get('/user-games', (req, res) => {
   }
 });
 
-// GET /invites - List pending invites for a user by email
 router.get('/invites', (req, res) => {
   try {
     const email = req.query.email as string;
@@ -105,7 +92,6 @@ router.get('/invites', (req, res) => {
   }
 });
 
-// GET /games/:id - Get game state
 router.get('/:id', (req, res) => {
   try {
     const userId = req.query.userId as string;
@@ -116,7 +102,6 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// POST /games/:id/move - Submit move
 router.post('/:id/move', (req, res) => {
   try {
     const { userId, cardId, coord, swap } = submitMoveSchema.parse(req.body);
@@ -127,7 +112,6 @@ router.post('/:id/move', (req, res) => {
   }
 });
 
-// POST /games/:id/leave - Leave game
 router.post('/:id/leave', (req, res) => {
   try {
     const { userId } = userIdSchema.parse(req.body);
@@ -138,7 +122,6 @@ router.post('/:id/leave', (req, res) => {
   }
 });
 
-// POST /invites/:id/accept - Accept an invite
 router.post('/invites/:id/accept', (req, res) => {
   try {
     const { userId, email, name } = joinGameSchema.parse(req.body);
@@ -153,7 +136,6 @@ router.post('/invites/:id/accept', (req, res) => {
   }
 });
 
-// POST /invites/:id/decline - Decline an invite
 router.post('/invites/:id/decline', (req, res) => {
   try {
     const invite = inviteStore.getInvite(req.params.id);
@@ -165,19 +147,7 @@ router.post('/invites/:id/decline', (req, res) => {
   }
 });
 
-// --- Debug (development only) ---
-
-router.get('/debug/all-data', (_req, res) => {
-  try {
-    res.json(gameService.debugGetAllGames());
-  } catch (err) {
-    handleError(res, err);
-  }
-});
-
-// --- Error Handling ---
-
-function handleError(res: any, err: unknown) {
+function handleError(res: Response, err: unknown) {
   if (err instanceof z.ZodError) {
     return res.status(400).json({ error: 'Invalid request', issues: err.issues });
   }

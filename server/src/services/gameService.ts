@@ -1,18 +1,10 @@
-/**
- * GAME SERVICE - Simultaneous card-drafting game logic
- *
- * Pure business logic: validation, simultaneous turns, scoring.
- * All persistence goes through gameStore.
- */
-
 import type { Game, EcoMove, GameStateResponse } from '../types/game.js';
+import type { PlacedCard } from '../types/card.js';
 import * as gameStore from '../data/gameStore.js';
 import * as deckService from './deckService.js';
 import * as ecosystemService from './ecosystemService.js';
 import { computeScores } from './scoring/index.js';
 import { v4 as uuidv4 } from 'uuid';
-
-// --- Creation & Lobby ---
 
 export function createGame(userId: string, email: string, name: string, gameName?: string): Game {
   const id = uuidv4();
@@ -45,8 +37,6 @@ export function joinGame(gameId: string, userId: string, email: string, name: st
   return gameStore.updateGame(gameId, game);
 }
 
-// --- Start ---
-
 export function startGame(gameId: string, userId: string): Game {
   const game = requireGame(gameId);
   if (game.hostUserId !== userId) throw new Error('Only host can start');
@@ -68,13 +58,11 @@ export function startGame(gameId: string, userId: string): Game {
 
   for (const id of playerIds) {
     game.ecosystemsByPlayerId[id] = [];
-    game.submittedMovesByPlayerId = {};
   }
+  game.submittedMovesByPlayerId = {};
 
   return gameStore.updateGame(gameId, game);
 }
-
-// --- Moves ---
 
 export function submitMove(gameId: string, userId: string, move: EcoMove): Game {
   const game = requireGame(gameId);
@@ -82,11 +70,11 @@ export function submitMove(gameId: string, userId: string, move: EcoMove): Game 
   requirePlayer(game, userId);
   if (game.submittedMovesByPlayerId[userId]) throw new Error('Already submitted this turn');
 
-  const hand = game.handsByPlayerId[userId] ?? [];
+  const hand = game.handsByPlayerId[userId]!;
   const card = hand.find(c => c.id === move.cardId);
   if (!card) throw new Error('Card not in your hand');
 
-  const eco = game.ecosystemsByPlayerId[userId] ?? [];
+  const eco = game.ecosystemsByPlayerId[userId]!;
   if (!ecosystemService.isValidPlacement(eco, move.coord)) throw new Error('Invalid placement');
 
   if (move.swap) {
@@ -105,8 +93,6 @@ export function submitMove(gameId: string, userId: string, move: EcoMove): Game 
   return checkAndResolveTurn(gameStore.updateGame(gameId, game));
 }
 
-// --- Turn Resolution ---
-
 function checkAndResolveTurn(game: Game): Game {
   const playerIds = game.playerOrder;
   if (playerIds.some(id => !game.submittedMovesByPlayerId[id])) return game;
@@ -114,12 +100,12 @@ function checkAndResolveTurn(game: Game): Game {
   // 1 & 2: Remove card from hand, place in ecosystem
   for (const id of playerIds) {
     const move = game.submittedMovesByPlayerId[id]!;
-    const hand = game.handsByPlayerId[id] ?? [];
+    const hand = game.handsByPlayerId[id]!;
     const card = hand.find(c => c.id === move.cardId)!;
 
     game.handsByPlayerId[id] = hand.filter(c => c.id !== move.cardId);
     game.ecosystemsByPlayerId[id] = ecosystemService.placeCard(
-      game.ecosystemsByPlayerId[id] ?? [], card, move.coord
+      game.ecosystemsByPlayerId[id]!, card, move.coord
     );
   }
 
@@ -128,7 +114,7 @@ function checkAndResolveTurn(game: Game): Game {
     const move = game.submittedMovesByPlayerId[id]!;
     if (move.swap) {
       game.ecosystemsByPlayerId[id] = ecosystemService.applySwap(
-        game.ecosystemsByPlayerId[id] ?? [], move.swap.a, move.swap.b
+        game.ecosystemsByPlayerId[id]!, move.swap.a, move.swap.b
       );
     }
   }
@@ -163,13 +149,11 @@ function checkAndResolveTurn(game: Game): Game {
   return gameStore.updateGame(game.id, game);
 }
 
-// --- Game State ---
-
 export function getGameState(gameId: string, userId: string): GameStateResponse {
   const game = requireGame(gameId);
   requirePlayer(game, userId);
 
-  const opponentEcosystems: Record<string, import('../types/card.js').PlacedCard[]> = {};
+  const opponentEcosystems: Record<string, PlacedCard[]> = {};
   for (const p of game.players) {
     if (p.userId !== userId) {
       opponentEcosystems[p.name] = game.ecosystemsByPlayerId[p.userId] ?? [];
@@ -190,16 +174,14 @@ export function getGameState(gameId: string, userId: string): GameStateResponse 
       playerOrder: game.playerOrder,
       players: game.players,
     },
-    hand: game.handsByPlayerId[userId] ?? [],
-    ecosystem: game.ecosystemsByPlayerId[userId] ?? [],
+    hand: game.handsByPlayerId[userId]!,
+    ecosystem: game.ecosystemsByPlayerId[userId]!,
     opponentEcosystems,
     hasSubmitted: !!game.submittedMovesByPlayerId[userId],
     waitingFor,
     ...(game.status === 'finished' && game.scoresByPlayerId ? { scores: game.scoresByPlayerId } : {}),
   };
 }
-
-// --- Leave ---
 
 export function leaveGame(gameId: string, userId: string): Game {
   const game = requireGame(gameId);
@@ -216,17 +198,9 @@ export function leaveGame(gameId: string, userId: string): Game {
   return gameStore.updateGame(gameId, game);
 }
 
-// --- Queries ---
-
 export function getUserGames(userId: string): Game[] {
   return gameStore.getUserGames(userId);
 }
-
-export function debugGetAllGames(): Game[] {
-  return gameStore.getAllGames();
-}
-
-// --- Helpers ---
 
 function requireGame(id: string): Game {
   const game = gameStore.getGame(id);

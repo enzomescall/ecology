@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { CardTile } from './CardTile';
 import type { CardType } from './CardTile';
 
@@ -17,24 +18,22 @@ interface Props {
 }
 
 function coordKey(c: Coord) { return `${c.x},${c.y}`; }
-function coordEq(a: Coord, b: Coord) { return a.x === b.x && a.y === b.y; }
 
 function computeBounds(ecosystem: PlacedCard[], validPlacements?: Coord[]) {
   if (ecosystem.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
   const allCoords = ecosystem.map(p => p.coord);
-  let minX = Math.min(...allCoords.map(c => c.x));
-  let maxX = Math.max(...allCoords.map(c => c.x));
-  let minY = Math.min(...allCoords.map(c => c.y));
-  let maxY = Math.max(...allCoords.map(c => c.y));
+  const origMinX = Math.min(...allCoords.map(c => c.x));
+  const origMaxX = Math.max(...allCoords.map(c => c.x));
+  const origMinY = Math.min(...allCoords.map(c => c.y));
+  const origMaxY = Math.max(...allCoords.map(c => c.y));
 
-  // Expand by 1 in each direction, clamp to 5x4
-  minX = Math.max(minX - 1, maxX - 4);
-  maxX = Math.min(maxX + 1, minX + 4);
-  minY = Math.max(minY - 1, maxY - 3);
-  maxY = Math.min(maxY + 1, minY + 3);
+  const tempMinX = Math.max(origMinX - 1, origMaxX - 4);
+  const tempMaxX = Math.min(origMaxX + 1, tempMinX + 4);
+  const tempMinY = Math.max(origMinY - 1, origMaxY - 3);
+  const tempMaxY = Math.min(origMaxY + 1, tempMinY + 3);
 
-  return { minX, maxX, minY, maxY };
+  return { minX: tempMinX, maxX: tempMaxX, minY: tempMinY, maxY: tempMaxY };
 }
 
 export function EcosystemGrid({
@@ -53,8 +52,8 @@ export function EcosystemGrid({
       const key = coordKey({ x, y });
       const placed = cardByCoord.get(key);
       const isValid = validSet.has(key);
-      const isSelected = selectedCell && coordEq(selectedCell, { x, y });
-      const isSwapSelected = swapSelection.some(s => coordEq(s, { x, y }));
+      const isSelected = selectedCell && selectedCell.x === x && selectedCell.y === y;
+      const isSwapSelected = swapSelection.some(s => s.x === x && s.y === y);
 
       if (placed) {
         const handleClick = swapMode && onSwapSelect

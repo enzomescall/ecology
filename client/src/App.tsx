@@ -40,7 +40,6 @@ export default function App() {
       {screen.type === 'email-sent' && (
         <EmailSent
           email={screen.email}
-          onResend={() => {}}
           onLogin={(user) => setScreen({ type: 'home', user })}
         />
       )}

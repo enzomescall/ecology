@@ -1,23 +1,43 @@
 import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "localhost",
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true",
-  auth: process.env.SMTP_USER ? {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  } : undefined,
-});
+let transporter: Transporter;
+let from: string;
 
-const FROM = process.env.EMAIL_FROM || "Ecosystem <noreply@ecosystem.game>";
+export async function initEmailService(): Promise<void> {
+  if (process.env.SMTP_HOST) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === "true",
+      auth: process.env.SMTP_USER ? {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      } : undefined,
+    });
+    from = process.env.EMAIL_FROM || "Ecosystem <noreply@ecosystem.game>";
+  } else {
+    const account = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: account.smtp.host,
+      port: account.smtp.port,
+      secure: account.smtp.secure,
+      auth: { user: account.user, pass: account.pass },
+    });
+    from = "Ecosystem <dev@ethereal.email>";
+    console.log(`[EMAIL] Using Ethereal test account: ${account.user}`);
+    console.log(`[EMAIL] View sent emails at https://ethereal.email/login`);
+    console.log(`[EMAIL]   User: ${account.user}`);
+    console.log(`[EMAIL]   Pass: ${account.pass}`);
+  }
+}
 
 async function send(to: string, subject: string, html: string): Promise<void> {
-  if (!process.env.SMTP_HOST) {
-    console.log(`[DEV] Email to ${to}: ${subject}`);
-    return;
+  const info = await transporter.sendMail({ from, to, subject, html });
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) {
+    console.log(`[EMAIL] Sent to ${to}: ${previewUrl}`);
   }
-  await transporter.sendMail({ from: FROM, to, subject, html });
 }
 
 export async function sendOTCEmail(to: string, code: string): Promise<void> {

@@ -1,5 +1,5 @@
-const BASE_URL = 'http://localhost:4000/api/game';
-const AUTH_URL = 'http://localhost:4000/api/auth';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api/game';
+const AUTH_URL = import.meta.env.VITE_API_URL?.replace('/game', '/auth') ?? 'http://localhost:4000/api/auth';
 
 export type CardType = 'stream' | 'meadow' | 'wolf' | 'fox' | 'bear' | 'trout' | 'dragonfly' | 'bee' | 'eagle' | 'deer' | 'rabbit';
 
@@ -129,3 +129,6 @@ export const acceptInvite = (inviteId: string, userId: string, email: string, na
 
 export const declineInvite = (inviteId: string) =>
   post<{ success: boolean }>(`${BASE_URL}/invites/${inviteId}/decline`, {});
+
+export const getUserGames = (userId: string) =>
+  get<GameSummary[]>(`${BASE_URL}/user-games?userId=${encodeURIComponent(userId)}`);

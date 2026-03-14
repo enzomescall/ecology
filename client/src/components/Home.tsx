@@ -2,12 +2,12 @@ import { Plus, LogIn, RefreshCw, EyeOff, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '../App';
 import type { GameSummary as Game } from '../services/gameApi';
-import { getInvites, acceptInvite, declineInvite } from '../services/gameApi';
+import { getInvites, acceptInvite, declineInvite, getUserGames } from '../services/gameApi';
 import type { Invite } from '../services/gameApi';
 
 interface GameDisplay {
   game: Game;
-  status: 'your-turn' | 'waiting' | 'finished';
+  status: 'waiting' | 'finished';
 }
 
 interface HomeProps {
@@ -24,35 +24,19 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editedName, setEditedName] = useState(user.name);
-  const [isSaving, setIsSaving] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [hideFinished, setHideFinished] = useState(false);
 
   const fetchGames = async () => {
     setIsLoading(true);
     try {
-      const url = `http://localhost:4000/api/game/user-games?userId=${encodeURIComponent(user.userId)}`;
-      console.log('Fetching games from:', url);
-      const response = await fetch(url);
-      const gamesList = await response.json();
-      console.log('Games response:', gamesList);
-      if (response.ok && Array.isArray(gamesList)) {
-        setGames(gamesList.map((game: Game) => {
-          let status: 'your-turn' | 'waiting' | 'finished';
-          
-          if (game.status === 'finished') {
-            status = 'finished';
-          } else {
-            status = 'waiting';
-          }
-          
-          return { game, status };
-        }));
-      } else {
-        console.error('Response not ok or not array:', response.ok, Array.isArray(gamesList));
-      }
-    } catch (err) {
-      console.error('Failed to fetch games:', err);
+      const gamesList = await getUserGames(user.userId);
+      setGames(gamesList.map((game: Game) => ({
+        game,
+        status: game.status === 'finished' ? 'finished' as const : 'waiting' as const,
+      })));
+    } catch {
+      // ignore
     } finally {
       setIsLoading(false);
     }
@@ -234,21 +218,16 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
                         padding: '0.25rem 0.75rem',
                         borderRadius: '0.5rem',
                         fontSize: '0.875rem',
-                        backgroundColor: 
-                          status === 'your-turn' ? 'var(--color-success)' :
+                        backgroundColor:
                           status === 'finished' ? 'var(--color-sage-300)' :
                           'var(--color-sky-100)',
-                        color: 
+                        color:
                           status === 'finished' ? 'var(--color-text-primary)' :
-                          status === 'your-turn' ? 'white' :
                           'var(--color-sky-800)',
                       }}
                     >
-                      {status === 'your-turn' && <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '9999px', backgroundColor: 'white', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />}
                       <span>
-                        {status === 'your-turn' ? 'Your turn' :
-                         status === 'finished' ? 'Finished' :
-                         'Waiting'}
+                        {status === 'finished' ? 'Finished' : 'Waiting'}
                       </span>
                     </div>
                   </div>
@@ -464,40 +443,37 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                disabled={isSaving}
+                disabled={false}
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: '0.5rem',
                   border: `1px solid var(--color-error)`,
                   color: 'var(--color-error)',
                   backgroundColor: 'transparent',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  opacity: isSaving ? 0.5 : 1,
+                  cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                 }}
-                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'rgba(184, 93, 58, 0.1)')}
-                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(184, 93, 58, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Delete Account
               </button>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
                   onClick={() => setShowLogoutConfirm(true)}
-                  disabled={isSaving}
                   style={{
                     padding: '0.5rem 1rem',
                     borderRadius: '0.5rem',
                     border: `1px solid var(--color-border)`,
                     color: 'var(--color-text-secondary)',
                     backgroundColor: 'transparent',
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                    opacity: isSaving ? 0.5 : 1,
+                    cursor: 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '500',
                   }}
-                  onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
-                  onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-100)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   Log Out
                 </button>
@@ -561,20 +537,18 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                disabled={isSaving}
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: '0.5rem',
                   border: `1px solid var(--color-border)`,
                   color: 'var(--color-text-secondary)',
                   backgroundColor: 'transparent',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  opacity: isSaving ? 0.5 : 1,
+                  cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                 }}
-                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
-                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-100)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Cancel
               </button>
@@ -657,20 +631,18 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                disabled={isSaving}
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: '0.5rem',
                   border: `1px solid var(--color-border)`,
                   color: 'var(--color-text-secondary)',
                   backgroundColor: 'transparent',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  opacity: isSaving ? 0.5 : 1,
+                  cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                 }}
-                onMouseEnter={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'var(--color-sage-100)')}
-                onMouseLeave={(e) => !isSaving && (e.currentTarget.style.backgroundColor = 'transparent')}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-100)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Cancel
               </button>

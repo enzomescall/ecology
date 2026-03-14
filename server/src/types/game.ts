@@ -16,20 +16,7 @@ export interface EcoMove {
   swap: { a: Coord; b: Coord } | null;
 }
 
-export interface ScoreBreakdown {
-  stream: number;
-  meadow: number;
-  wolf: number;
-  fox: number;
-  bear: number;
-  trout: number;
-  dragonfly: number;
-  bee: number;
-  eagle: number;
-  deer: number;
-  diversityPenalty: number;
-  total: number;
-}
+import type { ScoreBreakdown } from '../services/scoring/index.js';
 
 export interface Game {
   id: string;
@@ -49,20 +36,6 @@ export interface Game {
   createdAt: Date;
   startedAt?: Date;
   finishedAt?: Date;
-}
-
-export interface CreateGameRequest {
-  hostUserId: string;
-  hostEmail: string;
-  hostName: string;
-  gameName?: string;
-}
-
-export interface JoinGameRequest {
-  gameId: string;
-  userId: string;
-  email: string;
-  name: string;
 }
 
 export interface GameStateResponse {

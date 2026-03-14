@@ -3,8 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import gameRouter from "./routes/games.js";
 import authRouter from "./routes/auth.js";
+import { initEmailService } from "./services/emailService.js";
 
 dotenv.config();
+
+await initEmailService();
+
 const app = express();
 app.use(cors());
 app.use(express.json());

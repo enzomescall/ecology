@@ -4,7 +4,7 @@ import { verifyAuthCode } from '../services/gameApi';
 
 interface EmailSentProps {
   email: string;
-  onResend: () => void;
+  onResend?: () => void;
   onLogin: (user: { userId: string; email: string; name: string }) => void;
 }
 
@@ -95,11 +95,12 @@ export function EmailSent({ email, onResend, onLogin }: EmailSentProps) {
           The code will expire in 15 minutes.
         </p>
 
-        {/* Resend Button */}
-        <button onClick={onResend} className="button-ghost">
-          <RefreshCw size={16} />
-          Resend code
-        </button>
+        {onResend && (
+          <button onClick={onResend} className="button-ghost">
+            <RefreshCw size={16} />
+            Resend code
+          </button>
+        )}
       </div>
     </div>
   );

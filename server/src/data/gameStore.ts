@@ -1,9 +1,3 @@
-/**
- * MOCK DATA STORE - In-memory game state persistence layer
- *
- * Function signatures stay identical when migrating to a real DB.
- */
-
 import type { Game } from '../types/game.js';
 
 const gamesStore = new Map<string, Game>();

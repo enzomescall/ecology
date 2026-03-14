@@ -1,4 +1,4 @@
-import type { Card, CardType, Coord, PlacedCard } from '../types/card.js';
+import type { Card, Coord, PlacedCard } from '../types/card.js';
 
 const coordKey = (c: Coord): string => `${c.x},${c.y}`;
 
@@ -70,32 +70,3 @@ export function applySwap(eco: PlacedCard[], a: Coord, b: Coord): PlacedCard[] {
   });
 }
 
-export function getConnectedGroups(eco: PlacedCard[], type: CardType): PlacedCard[][] {
-  const ofType = eco.filter(p => p.card.type === type);
-  const map = new Map(ofType.map(p => [coordKey(p.coord), p]));
-  const visited = new Set<string>();
-  const groups: PlacedCard[][] = [];
-
-  for (const p of ofType) {
-    const key = coordKey(p.coord);
-    if (visited.has(key)) continue;
-
-    const group: PlacedCard[] = [];
-    const queue = [p];
-    visited.add(key);
-
-    while (queue.length > 0) {
-      const curr = queue.shift()!;
-      group.push(curr);
-      for (const adj of getAdjacentCoords(curr.coord)) {
-        const adjKey = coordKey(adj);
-        if (!visited.has(adjKey) && map.has(adjKey)) {
-          visited.add(adjKey);
-          queue.push(map.get(adjKey)!);
-        }
-      }
-    }
-    groups.push(group);
-  }
-  return groups;
-}
