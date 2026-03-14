@@ -73,12 +73,12 @@ export function Landing({ onEmailSubmit }: LandingProps) {
 
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="mb-3">Ecosystem</h1>
-          <p 
+          <h1 className="mb-3">Ecology</h1>
+          <p
             className="text-lg"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            An async nature-themed drafting game for friends
+            A nature-themed card game for friends
           </p>
         </div>
 

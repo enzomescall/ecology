@@ -96,7 +96,7 @@ export function Analytics({ user, onBack }: AnalyticsProps) {
               </div>
             </Section>
 
-            <Section title="Ecosystem">
+            <Section title="Board">
               <StatRow label="Avg board width" value={data.ecosystem.averageWidth} />
               <StatRow label="Avg board height" value={data.ecosystem.averageHeight} />
               <StatRow label="Avg cards per game" value={data.ecosystem.averageCardCount} />

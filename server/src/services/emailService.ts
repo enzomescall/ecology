@@ -15,7 +15,7 @@ export async function initEmailService(): Promise<void> {
         pass: process.env.SMTP_PASS,
       } : undefined,
     });
-    from = process.env.EMAIL_FROM || "Ecosystem <noreply@ecosystem.game>";
+    from = process.env.EMAIL_FROM || "Ecology <noreply@ecology.game>";
   } else {
     const account = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
@@ -24,7 +24,7 @@ export async function initEmailService(): Promise<void> {
       secure: account.smtp.secure,
       auth: { user: account.user, pass: account.pass },
     });
-    from = "Ecosystem <dev@ethereal.email>";
+    from = "Ecology <dev@ethereal.email>";
     console.log(`[EMAIL] Using Ethereal test account: ${account.user}`);
     console.log(`[EMAIL] View sent emails at https://ethereal.email/login`);
     console.log(`[EMAIL]   User: ${account.user}`);
@@ -41,9 +41,9 @@ async function send(to: string, subject: string, html: string): Promise<void> {
 }
 
 export async function sendOTCEmail(to: string, code: string): Promise<void> {
-  await send(to, `Your Ecosystem login code: ${code}`, `
+  await send(to, `Your Ecology login code: ${code}`, `
     <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 24px;">
-      <h2 style="color: #2d5a2d;">Ecosystem</h2>
+      <h2 style="color: #2d5a2d;">Ecology</h2>
       <p>Your one-time login code is:</p>
       <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px; background: #f5f5f0; border-radius: 8px; text-align: center;">${code}</div>
       <p style="color: #888; font-size: 14px; margin-top: 16px;">This code expires in 15 minutes.</p>
@@ -52,11 +52,11 @@ export async function sendOTCEmail(to: string, code: string): Promise<void> {
 }
 
 export async function sendInviteEmail(to: string, inviterName: string, gameName: string): Promise<void> {
-  await send(to, `${inviterName} invited you to play Ecosystem`, `
+  await send(to, `${inviterName} invited you to play Ecology`, `
     <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 24px;">
-      <h2 style="color: #2d5a2d;">Ecosystem</h2>
+      <h2 style="color: #2d5a2d;">Ecology</h2>
       <p><strong>${inviterName}</strong> invited you to join <strong>${gameName}</strong>!</p>
-      <p>Log in to Ecosystem to accept the invite and start playing.</p>
+      <p>Log in to Ecology to accept the invite and start playing.</p>
     </div>
   `);
 }

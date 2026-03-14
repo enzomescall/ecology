@@ -1,8 +1,8 @@
-# Ecosystem Turn and Round Spec
+# Ecology Turn and Round Spec
 
 ## Purpose
 
-This document defines the turn flow, placement rules, round flow, and state transitions for an asynchronous online implementation of Ecosystem.
+This document defines the turn flow, placement rules, round flow, and state transitions for an asynchronous online implementation of Ecology.
 
 This is an implementation spec, not a copy of the printed rules.
 

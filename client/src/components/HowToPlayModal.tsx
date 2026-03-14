@@ -15,7 +15,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Game Overview',
     content:
-      'Ecosystem is a simultaneous drafting game for 2-6 players. Each round has 10 turns. On every turn, all players pick a card from their hand and place it on their 5x4 grid at the same time. After each turn, hands are passed to the next player (left in round 1, right in round 2). At the end of 2 rounds, the player with the most points wins!',
+      'Ecology is a card game for 2-6 players. Each round has 10 turns. On every turn, all players pick a card from their hand and place it on their 5x4 grid at the same time. After each turn, hands are passed to the next player (left in round 1, right in round 2). At the end of 2 rounds, the player with the most points wins!',
   },
   {
     title: 'Placement Rules',

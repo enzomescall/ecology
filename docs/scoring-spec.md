@@ -1,8 +1,8 @@
-# Ecosystem Scoring Spec
+# Ecology Scoring Spec
 
 ## Purpose
 
-This document defines how to compute final scores for each scoring category in Ecosystem.
+This document defines how to compute final scores for each scoring category in Ecology.
 
 This is an implementation spec, not a copy of the printed rules.
 

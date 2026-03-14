@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ecosystem is an async online implementation of the Ecosystem card game — a simultaneous-drafting game where 2-6 players build 4×5 ecosystems across 2 rounds of 10 turns each. React frontend, Express backend, in-memory data store.
+Ecology is an async online card game where 2-6 players build 4×5 nature-themed boards across 2 rounds of 10 turns each. React frontend, Express backend, in-memory data store.
 
 ## Commands
 

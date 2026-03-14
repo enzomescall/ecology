@@ -113,7 +113,7 @@ export function Home({ user, onCreateGame, onJoinGame, onAnalytics }: HomeProps)
     <div className="min-h-screen pb-8">
       <header className="page-header">
         <div className="page-header-content">
-          <h2>Ecosystem</h2>
+          <h2>Ecology</h2>
           <div className="flex-between" style={{ gap: '0.5rem' }}>
             <HelpButton onClick={() => setShowHowToPlay(true)} />
             <button
