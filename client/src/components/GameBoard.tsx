@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, LogOut } from 'lucide-react';
 import { getGameState, submitMove, leaveGame, startGame } from '../services/gameApi';
-import type { Card, Coord, PlacedCard, GameStateResponse } from '../services/gameApi';
+import type { Card, Coord, PlacedCard, GameStateResponse, CardType } from '../services/gameApi';
 import { CardTile } from './CardTile';
 import { EcosystemGrid } from './EcosystemGrid';
+import { HowToPlayModal, HelpButton } from './HowToPlayModal';
 import type { User } from '../App';
 
 interface GameBoardProps {
@@ -33,6 +34,20 @@ function validPlacements(ecosystem: PlacedCard[]): Coord[] {
 
 function coordEq(a: Coord, b: Coord) { return a.x === b.x && a.y === b.y; }
 
+const SCORING_HINTS: Record<CardType, string> = {
+  stream: 'Longest connected stream vs opponents (8/5 pts)',
+  meadow: 'Connected meadow groups (2→3, 3→6, 4→10, 5+→15)',
+  wolf: 'Most wolves vs opponents (12/8/4 pts)',
+  fox: '3 pts per fox not adjacent to bear or wolf',
+  bear: '2 pts per adjacent trout or bee',
+  trout: '2 pts per adjacent stream or dragonfly',
+  dragonfly: 'Score = size of each adjacent stream group',
+  bee: '3 pts per adjacent meadow group',
+  eagle: '2 pts per rabbit/trout within 2 straight-line spaces',
+  deer: '2 pts per row + 2 pts per column with deer',
+  rabbit: 'Allows swapping two adjacent cards after placement',
+};
+
 // --- Component ---
 
 export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
@@ -45,6 +60,9 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   const [error, setError] = useState<string | null>(null);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [isLeavingGame, setIsLeavingGame] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showScoringHint, setShowScoringHint] = useState(false);
+  const [pendingPlacedCard, setPendingPlacedCard] = useState<PlacedCard | null>(null);
 
   // Polling
   const fetchState = useCallback(async () => {
@@ -64,10 +82,22 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     return () => clearInterval(id);
   }, [fetchState]);
 
+  // Clear pending placed card once server state confirms it
+  useEffect(() => {
+    if (pendingPlacedCard && gameState) {
+      const exists = gameState.ecosystem.some(
+        p => p.coord.x === pendingPlacedCard.coord.x && p.coord.y === pendingPlacedCard.coord.y
+      );
+      if (exists) setPendingPlacedCard(null);
+    }
+  }, [gameState, pendingPlacedCard]);
+
   // Actions
   const handleSubmitMove = async (skipSwap = false) => {
     if (!selectedCard || !selectedCell || !gameState) return;
     setIsSubmitting(true);
+    // Track the card we're placing for immediate preview
+    setPendingPlacedCard({ card: selectedCard, coord: selectedCell });
     try {
       const swap = swapMode && swapSelection.length === 2 && !skipSwap
         ? { a: swapSelection[0], b: swapSelection[1] } : null;
@@ -80,9 +110,11 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
       setSelectedCell(null);
       setSwapMode(false);
       setSwapSelection([]);
+      setShowScoringHint(false);
       await fetchState();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit move');
+      setPendingPlacedCard(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,6 +166,11 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   const { game, hand, ecosystem, opponentEcosystems, hasSubmitted, waitingFor } = gameState;
   const isHost = game.players[0]?.userId === user.userId;
 
+  // Merge pending placed card into ecosystem for immediate preview
+  const displayEcosystem = pendingPlacedCard
+    ? [...ecosystem, pendingPlacedCard]
+    : ecosystem;
+
   // --- Lobby View ---
   if (game.status === 'lobby') {
     const handleStart = async () => {
@@ -159,7 +196,10 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
               </button>
               <h3 style={{ margin: 0 }}>{game.name}</h3>
             </div>
-            <span className="label-badge">Lobby</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <HelpButton onClick={() => setShowHowToPlay(true)} />
+              <span className="label-badge">Lobby</span>
+            </div>
           </div>
         </header>
         <main className="page-content" style={{ textAlign: 'center' }}>
@@ -202,6 +242,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             <p style={{ color: 'var(--color-text-muted)' }}>Waiting for host to start the game...</p>
           )}
         </main>
+        <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
       </div>
     );
   }
@@ -235,9 +276,10 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             </button>
             <h3 style={{ margin: 0 }}>{game.name}</h3>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className="label-badge">Round {game.round}/2</span>
             <span className="label-badge">Turn {game.turn}/10</span>
+            <HelpButton onClick={() => setShowHowToPlay(true)} />
           </div>
         </div>
       </header>
@@ -262,12 +304,38 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         {/* Hand */}
         {!hasSubmitted && hand.length > 0 && (
           <div className="mb-4">
-            <h3 className="mb-2" style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-              Your cards
-            </h3>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}
+            <div className="mb-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+                Your cards
+              </h3>
+              {selectedCard && (
+                <button
+                  onClick={() => setShowScoringHint(!showScoringHint)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--color-forest-600)', fontSize: '0.8125rem',
+                    fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                  title="Show scoring hint"
+                >
+                  ? {selectedCard.type}
+                </button>
+              )}
+            </div>
+            {showScoringHint && selectedCard && (
+              <div style={{
+                padding: '0.5rem 0.75rem', marginBottom: '0.5rem',
+                backgroundColor: 'var(--color-sage-100)', borderRadius: 'var(--radius-lg)',
+                fontSize: '0.8125rem', color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-sage-300)',
+              }}>
+                <strong style={{ textTransform: 'capitalize' }}>{selectedCard.type}:</strong>{' '}
+                {SCORING_HINTS[selectedCard.type]}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 0' }}
               className="no-scrollbar">
-              {hand.map(card => (
+              {[...hand].sort((a, b) => a.type.localeCompare(b.type)).map(card => (
                 <CardTile
                   key={card.id}
                   type={card.type}
@@ -277,6 +345,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                     if (swapMode) return;
                     setSelectedCard(selectedCard?.id === card.id ? null : card);
                     setSelectedCell(null);
+                    setShowScoringHint(false);
                   }}
                 />
               ))}
@@ -290,7 +359,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             Your Ecosystem
           </h3>
           <EcosystemGrid
-            ecosystem={ecosystem}
+            ecosystem={displayEcosystem}
             validPlacements={placements}
             onCellClick={handleCellClick}
             selectedCell={selectedCell}
@@ -399,6 +468,9 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
           </div>
         </div>
       )}
+
+      {/* How to Play Modal */}
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 }

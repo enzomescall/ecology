@@ -156,7 +156,7 @@ export function getGameState(gameId: string, userId: string): GameStateResponse 
   const opponentEcosystems: Record<string, PlacedCard[]> = {};
   for (const p of game.players) {
     if (p.userId !== userId) {
-      opponentEcosystems[p.name] = game.ecosystemsByPlayerId[p.userId] ?? [];
+      opponentEcosystems[p.userId] = game.ecosystemsByPlayerId[p.userId] ?? [];
     }
   }
 

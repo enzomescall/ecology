@@ -4,6 +4,7 @@ import type { User as UserType } from '../App';
 import type { GameSummary as Game } from '../services/gameApi';
 import { getInvites, acceptInvite, declineInvite, getUserGames } from '../services/gameApi';
 import type { Invite } from '../services/gameApi';
+import { HowToPlayModal, HelpButton } from './HowToPlayModal';
 
 interface GameDisplay {
   game: Game;
@@ -26,6 +27,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [editedName, setEditedName] = useState(user.name);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [hideFinished, setHideFinished] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   const fetchGames = async () => {
     setIsLoading(true);
@@ -87,6 +89,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
         <div className="page-header-content">
           <h2>Ecosystem</h2>
           <div className="flex-between" style={{ gap: '0.5rem' }}>
+            <HelpButton onClick={() => setShowHowToPlay(true)} />
             <button
               onClick={() => fetchGames()}
               className="button-icon"
@@ -97,7 +100,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             <button
               onClick={() => setShowUserModal(true)}
               className="avatar-sm"
-              style={{ backgroundColor: 'var(--color-forest-600)', border: 'none', cursor: 'pointer' }}
+              style={{ backgroundColor: 'var(--color-forest-600)', color: 'white', border: 'none', cursor: 'pointer' }}
               title="User profile"
             >
               {getInitials(user.name)}
@@ -670,6 +673,9 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
           </div>
         </div>
       )}
+
+      {/* How to Play Modal */}
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 }
