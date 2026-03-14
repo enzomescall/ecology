@@ -1,4 +1,4 @@
-import { Plus, LogIn, RefreshCw, EyeOff, Eye, Search } from 'lucide-react';
+import { Plus, LogIn, RefreshCw, EyeOff, Eye, Search, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '../App';
 import type { GameSummary as Game } from '../services/gameApi';
@@ -17,6 +17,7 @@ interface HomeProps {
   user: UserType;
   onCreateGame: () => void;
   onJoinGame: (gameId: string) => void;
+  onAnalytics: () => void;
 }
 
 function getGameStatus(game: Game): GameStatus {
@@ -33,7 +34,7 @@ const STATUS_STYLES: Record<GameStatus, { bg: string; color: string; label: stri
   'all-left': { bg: '#fef3c7', color: '#92400e', label: 'Abandoned' },
 };
 
-export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
+export function Home({ user, onCreateGame, onJoinGame, onAnalytics }: HomeProps) {
   const [games, setGames] = useState<GameDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -121,6 +122,14 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
               style={{ color: 'var(--color-forest-600)' }}
             >
               <RefreshCw size={20} />
+            </button>
+            <button
+              onClick={onAnalytics}
+              className="button-icon"
+              style={{ color: 'var(--color-forest-600)' }}
+              title="Analytics"
+            >
+              <BarChart2 size={20} />
             </button>
             <button
               onClick={() => setShowUserModal(true)}

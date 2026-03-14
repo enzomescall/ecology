@@ -5,16 +5,18 @@ import { Home } from './components/Home';
 import { CreateGame } from './components/CreateGame';
 import { GameBoard } from './components/GameBoard';
 import { EndGame } from './components/EndGame';
+import { Analytics } from './components/Analytics';
 
 export type User = { userId: string; email: string; name: string };
 
-export type Screen = 
+export type Screen =
   | { type: 'landing' }
   | { type: 'email-sent'; email: string }
   | { type: 'home'; user: User }
   | { type: 'create-game'; user: User }
   | { type: 'game-board'; gameId: string; user: User }
-  | { type: 'end-game'; gameId: string; user: User };
+  | { type: 'end-game'; gameId: string; user: User }
+  | { type: 'analytics'; user: User };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'landing' });
@@ -44,10 +46,11 @@ export default function App() {
         />
       )}
       {screen.type === 'home' && (
-        <Home 
+        <Home
           user={screen.user}
           onCreateGame={() => setScreen({ type: 'create-game', user: screen.user })}
           onJoinGame={(gameId) => setScreen({ type: 'game-board', gameId, user: screen.user })}
+          onAnalytics={() => setScreen({ type: 'analytics', user: screen.user })}
         />
       )}
       {screen.type === 'create-game' && (
@@ -66,11 +69,17 @@ export default function App() {
         />
       )}
       {screen.type === 'end-game' && (
-        <EndGame 
+        <EndGame
           gameId={screen.gameId}
           user={screen.user}
           onReturnHome={() => setScreen({ type: 'home', user: screen.user })}
           onNewGame={() => setScreen({ type: 'create-game', user: screen.user })}
+        />
+      )}
+      {screen.type === 'analytics' && (
+        <Analytics
+          user={screen.user}
+          onBack={() => setScreen({ type: 'home', user: screen.user })}
         />
       )}
     </div>

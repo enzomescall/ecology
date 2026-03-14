@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as gameService from '../services/gameService.js';
 import * as inviteStore from '../data/inviteStore.js';
 import { sendInviteEmail } from '../services/emailService.js';
+import { getUserAnalytics } from '../services/analyticsService.js';
 
 const router = Router();
 
@@ -67,6 +68,16 @@ router.post('/:id/start', (req, res) => {
     const { userId } = userIdSchema.parse(req.body);
     const game = gameService.startGame(req.params.id, userId);
     res.json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.get('/analytics', (req, res) => {
+  try {
+    const userId = req.query.userId as string;
+    if (!userId) return res.status(400).json({ error: 'userId query param required' });
+    res.json(getUserAnalytics(userId));
   } catch (err) {
     handleError(res, err);
   }

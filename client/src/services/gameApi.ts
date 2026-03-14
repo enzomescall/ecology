@@ -132,3 +132,41 @@ export const declineInvite = (inviteId: string) =>
 
 export const getUserGames = (userId: string) =>
   get<GameSummary[]>(`${BASE_URL}/user-games?userId=${encodeURIComponent(userId)}`);
+
+export interface UserAnalytics {
+  overview: {
+    gamesPlayed: number;
+    gamesWon: number;
+    winRate: number;
+    totalGamesActive: number;
+  };
+  scoring: {
+    averageScore: number;
+    highestScore: number;
+    lowestScore: number;
+    categoryAverages: Record<string, number>;
+    diversityPenaltyAverage: number;
+    diversityPenaltyFrequency: Record<string, number>;
+  };
+  cards: {
+    totalCardsPlaced: number;
+    cardTypeDistribution: Record<CardType, number>;
+    averagePointsPerCard: Record<CardType, number>;
+    mostValuableCard: { type: CardType; avgPoints: number };
+    rabbitSwapsUsed: number;
+    rabbitSwapRate: number;
+  };
+  ecosystem: {
+    averageWidth: number;
+    averageHeight: number;
+    averageCardCount: number;
+    mostCommonShape: string;
+  };
+  opponents: {
+    mostPlayedAgainst: { name: string; games: number } | null;
+    winRateVsOpponents: Record<string, { name: string; wins: number; losses: number; winRate: number }>;
+  };
+}
+
+export const getUserAnalytics = (userId: string) =>
+  get<UserAnalytics>(`${BASE_URL}/analytics?userId=${encodeURIComponent(userId)}`);

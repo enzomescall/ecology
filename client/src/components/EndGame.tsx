@@ -206,7 +206,7 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
             const isBoardVisible = showBoard === player.userId;
             const cardScores = computeCardScores(player.ecosystem);
             return (
-              <div key={player.userId} className="card" style={{ border: isMe ? '2px solid var(--color-forest-600)' : undefined, overflow: 'hidden' }}>
+              <div key={player.userId} className="card" style={{ border: isMe ? '2px solid var(--color-forest-600)' : undefined }}>
                 {/* Rank number banner */}
                 <div style={{
                   backgroundColor: player.rank === 1 ? 'var(--color-forest-600)' : 'var(--color-sage-300)',
