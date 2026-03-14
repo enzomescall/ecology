@@ -1,4 +1,4 @@
-import { Plus, LogIn, RefreshCw, EyeOff, Eye } from 'lucide-react';
+import { Plus, LogIn, RefreshCw, EyeOff, Eye, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '../App';
 import type { GameSummary as Game } from '../services/gameApi';
@@ -6,9 +6,11 @@ import { getInvites, acceptInvite, declineInvite, getUserGames } from '../servic
 import type { Invite } from '../services/gameApi';
 import { HowToPlayModal, HelpButton } from './HowToPlayModal';
 
+type GameStatus = 'waiting' | 'active' | 'finished' | 'all-left';
+
 interface GameDisplay {
   game: Game;
-  status: 'waiting' | 'finished';
+  status: GameStatus;
 }
 
 interface HomeProps {
@@ -16,6 +18,20 @@ interface HomeProps {
   onCreateGame: () => void;
   onJoinGame: (gameId: string) => void;
 }
+
+function getGameStatus(game: Game): GameStatus {
+  if (game.status === 'finished') return 'finished';
+  if (game.status === 'active') return 'active';
+  if (game.players.every(p => p.leftGame)) return 'all-left';
+  return 'waiting';
+}
+
+const STATUS_STYLES: Record<GameStatus, { bg: string; color: string; label: string }> = {
+  waiting: { bg: 'var(--color-sky-100)', color: 'var(--color-sky-800)', label: 'Waiting' },
+  active: { bg: '#dcfce7', color: '#166534', label: 'Active' },
+  finished: { bg: 'var(--color-sage-300)', color: 'var(--color-text-primary)', label: 'Finished' },
+  'all-left': { bg: '#fef3c7', color: '#92400e', label: 'Abandoned' },
+};
 
 export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [games, setGames] = useState<GameDisplay[]>([]);
@@ -28,6 +44,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [hideFinished, setHideFinished] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchGames = async () => {
     setIsLoading(true);
@@ -35,7 +52,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
       const gamesList = await getUserGames(user.userId);
       setGames(gamesList.map((game: Game) => ({
         game,
-        status: game.status === 'finished' ? 'finished' as const : 'waiting' as const,
+        status: getGameStatus(game),
       })));
     } catch {
       // ignore
@@ -82,6 +99,14 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
   const getInitials = (name: string) => {
     return name.slice(0, 2).toUpperCase();
   };
+
+  const filteredGames = games.filter(({ game, status }) => {
+    if (hideFinished && (status === 'finished' || status === 'all-left')) return false;
+    if (searchQuery && game.name !== searchQuery) return false;
+    return true;
+  });
+
+  const inactiveStatuses: GameStatus[] = ['finished', 'all-left'];
 
   return (
     <div className="min-h-screen pb-8">
@@ -182,85 +207,112 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
               style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', gap: '0.25rem', color: 'var(--color-text-muted)' }}
             >
               {hideFinished ? <Eye size={14} /> : <EyeOff size={14} />}
-              {hideFinished ? 'Show finished' : 'Hide finished'}
+              {hideFinished ? 'Show inactive' : 'Hide inactive'}
             </button>
           </div>
+
+          {/* Search Bar */}
+          <div style={{ marginBottom: '1rem', position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by game name..."
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.75rem 0.625rem 2.25rem',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--color-border)',
+                fontSize: '0.875rem',
+                boxSizing: 'border-box',
+                color: 'var(--color-text-primary)',
+                backgroundColor: 'var(--color-bg-primary)',
+              }}
+            />
+          </div>
+
           {isLoading ? (
             <p>Loading games...</p>
-          ) : games.length === 0 ? (
+          ) : filteredGames.length === 0 ? (
             <p style={{ color: 'var(--color-text-muted)' }}>
-              No active games. Create or join one to get started!
+              {searchQuery ? 'No games match that name.' : 'No active games. Create or join one to get started!'}
             </p>
           ) : (
             <div className="space-stack-md">
-              {games.filter(({ status }) => !hideFinished || status !== 'finished').map(({ game, status }) => (
-                <button
-                  key={game.id}
-                  onClick={() => onJoinGame(game.id)}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: 'var(--color-bg-card)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-lg)',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
-                    <div>
-                      <h3 style={{ marginBottom: '0.25rem' }}>{game.name}</h3>
-                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                        {game.players.length} player{game.players.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        backgroundColor:
-                          status === 'finished' ? 'var(--color-sage-300)' :
-                          'var(--color-sky-100)',
-                        color:
-                          status === 'finished' ? 'var(--color-text-primary)' :
-                          'var(--color-sky-800)',
-                      }}
-                    >
-                      <span>
-                        {status === 'finished' ? 'Finished' : 'Waiting'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {game.players.map((player) => (
-                      <div
-                        key={player.userId}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '2rem',
-                          height: '2rem',
-                          borderRadius: '0.5rem',
-                          backgroundColor: player.userId === user.userId 
-                            ? 'var(--color-forest-600)' 
-                            : 'var(--color-sky-500)',
-                          color: 'white',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold',
-                        }}
-                        title={player.name}
-                      >
-                        {player.name.slice(0, 2).toUpperCase()}
+              {filteredGames.map(({ game, status }) => {
+                const statusStyle = STATUS_STYLES[status];
+                const isInactive = inactiveStatuses.includes(status);
+                return (
+                  <button
+                    key={game.id}
+                    onClick={() => onJoinGame(game.id)}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: 'var(--color-bg-card)',
+                      border: `1px solid ${isInactive ? 'var(--color-border)' : status === 'active' ? '#86efac' : 'var(--color-border)'}`,
+                      borderRadius: 'var(--radius-lg)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      opacity: isInactive ? 0.7 : 1,
+                      borderLeftWidth: '4px',
+                      borderLeftColor: status === 'active' ? '#22c55e' : status === 'waiting' ? 'var(--color-sky-500)' : status === 'all-left' ? '#f59e0b' : 'var(--color-sage-300)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
+                      <div>
+                        <h3 style={{ marginBottom: '0.25rem' }}>{game.name}</h3>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                          {game.players.length} player{game.players.length !== 1 ? 's' : ''}
+                          {status === 'active' && ` · Round ${game.round}, Turn ${game.turn}`}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                </button>
-              ))}
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          backgroundColor: statusStyle.bg,
+                          color: statusStyle.color,
+                        }}
+                      >
+                        <span>{statusStyle.label}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {game.players.map((player) => (
+                        <div
+                          key={player.userId}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '2rem',
+                            height: '2rem',
+                            borderRadius: '0.5rem',
+                            backgroundColor: player.leftGame
+                              ? 'var(--color-sage-300)'
+                              : player.userId === user.userId
+                                ? 'var(--color-forest-600)'
+                                : 'var(--color-sky-500)',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            opacity: player.leftGame ? 0.5 : 1,
+                          }}
+                          title={`${player.name}${player.leftGame ? ' (left)' : ''}`}
+                        >
+                          {player.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -268,7 +320,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
       {/* Join Game - Not Supported Modal */}
       {showJoinModal && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             inset: 0,
@@ -291,7 +343,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 
+            <h2
               style={{
                 fontSize: '1.125rem',
                 fontWeight: '600',
@@ -301,7 +353,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               Join Game
             </h2>
-            <p 
+            <p
               style={{
                 fontSize: '0.875rem',
                 color: 'var(--color-text-muted)',
@@ -341,7 +393,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
       {/* User Profile Modal */}
       {showUserModal && !showLogoutConfirm && !showDeleteConfirm && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             inset: 0,
@@ -364,7 +416,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 
+            <h2
               style={{
                 fontSize: '1.125rem',
                 fontWeight: '600',
@@ -488,7 +540,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             inset: 0,
@@ -511,7 +563,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 
+            <h2
               style={{
                 fontSize: '1.125rem',
                 fontWeight: '600',
@@ -521,7 +573,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               Log Out?
             </h2>
-            <p 
+            <p
               style={{
                 fontSize: '0.875rem',
                 color: 'var(--color-text-muted)',
@@ -582,7 +634,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             inset: 0,
@@ -605,7 +657,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 
+            <h2
               style={{
                 fontSize: '1.125rem',
                 fontWeight: '600',
@@ -615,7 +667,7 @@ export function Home({ user, onCreateGame, onJoinGame }: HomeProps) {
             >
               Delete Account?
             </h2>
-            <p 
+            <p
               style={{
                 fontSize: '0.875rem',
                 color: 'var(--color-text-muted)',
