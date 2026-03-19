@@ -11,8 +11,6 @@ import { initEmailService } from "./services/emailService.js";
 
 dotenv.config();
 
-await initEmailService();
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === "production";
 
@@ -50,4 +48,7 @@ if (isProd) {
 }
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  initEmailService().catch((err) => console.error("[EMAIL] Failed to initialize:", err));
+});
