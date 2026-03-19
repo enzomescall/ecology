@@ -1,5 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api/game';
-const AUTH_URL = import.meta.env.VITE_API_URL?.replace('/game', '/auth') ?? 'http://localhost:4000/api/auth';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:4000' : '');
+const BASE_URL = `${API_BASE}/api/game`;
+const AUTH_URL = `${API_BASE}/api/auth`;
 
 export type CardType = 'stream' | 'meadow' | 'wolf' | 'fox' | 'bear' | 'trout' | 'dragonfly' | 'bee' | 'eagle' | 'deer' | 'rabbit';
 
