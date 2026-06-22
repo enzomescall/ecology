@@ -25,10 +25,7 @@ export async function initEmailService(): Promise<void> {
       auth: { user: account.user, pass: account.pass },
     });
     from = "Ecology <dev@ethereal.email>";
-    console.log(`[EMAIL] Using Ethereal test account: ${account.user}`);
-    console.log(`[EMAIL] View sent emails at https://ethereal.email/login`);
-    console.log(`[EMAIL]   User: ${account.user}`);
-    console.log(`[EMAIL]   Pass: ${account.pass}`);
+    console.log(`[EMAIL] Using Ethereal test account for development mail delivery.`);
   }
 }
 

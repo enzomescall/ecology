@@ -12,7 +12,9 @@ const otcStore = new Map<string, OTCEntry>();
 export async function generateOTC(email: string, name: string): Promise<string> {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   otcStore.set(email, { code, name, expiresAt: new Date(Date.now() + 15 * 60 * 1000) });
-  console.log(`[DEV] OTC for ${email}: ${code}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[DEV] OTC generated for ${email}`);
+  }
   await sendOTCEmail(email, code);
   return code;
 }

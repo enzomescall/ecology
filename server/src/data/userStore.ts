@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { getUsers, saveUsers } from '../db/jsonStore.js';
 
 export interface StoredUser {
   userId: string;
@@ -7,7 +8,11 @@ export interface StoredUser {
   createdAt: Date;
 }
 
-const users = new Map<string, StoredUser>();
+const users = new Map<string, StoredUser>(getUsers().map((user) => [user.email, user]));
+
+function persist(): void {
+  saveUsers(Array.from(users.values()));
+}
 
 export function getOrCreateUser(email: string, name: string): StoredUser {
   const existing = getUserByEmail(email);
@@ -15,6 +20,7 @@ export function getOrCreateUser(email: string, name: string): StoredUser {
 
   const user: StoredUser = { userId: uuid(), email, name, createdAt: new Date() };
   users.set(email, user);
+  persist();
   return user;
 }
 

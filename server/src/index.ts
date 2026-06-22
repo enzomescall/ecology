@@ -15,6 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === "production";
 
 const app = express();
+app.set("trust proxy", "loopback");
 
 // Security headers (disable CSP in dev to avoid blocking Vite HMR)
 app.use(isProd ? helmet() : helmet({ contentSecurityPolicy: false }));
@@ -44,7 +45,7 @@ app.use("/api/auth", authRouter);
 if (isProd) {
   const clientDist = join(__dirname, "../../client/dist");
   app.use(express.static(clientDist));
-  app.get("*", (_, res) => res.sendFile(join(clientDist, "index.html")));
+  app.get("/{*splat}", (_, res) => res.sendFile(join(clientDist, "index.html")));
 }
 
 const PORT = process.env.PORT || 4000;

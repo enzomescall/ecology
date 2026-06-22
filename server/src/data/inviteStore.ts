@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { getInvites, saveInvites } from '../db/jsonStore.js';
 
 export interface Invite {
   id: string;
@@ -9,11 +10,16 @@ export interface Invite {
   createdAt: Date;
 }
 
-const invites = new Map<string, Invite>();
+const invites = new Map<string, Invite>(getInvites().map((invite) => [invite.id, invite]));
+
+function persist(): void {
+  saveInvites(Array.from(invites.values()));
+}
 
 export function createInvite(gameId: string, gameName: string, email: string, invitedByName: string): Invite {
   const invite: Invite = { id: uuid(), gameId, gameName, invitedEmail: email, invitedByName, createdAt: new Date() };
   invites.set(invite.id, invite);
+  persist();
   return invite;
 }
 
@@ -27,4 +33,5 @@ export function getInvite(id: string): Invite | null {
 
 export function deleteInvite(id: string): void {
   invites.delete(id);
+  persist();
 }

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "npm ci --prefix client && npm run build --prefix client && npm ci --prefix server && npm run build --prefix server",
+    "build:ecology": "npm ci --prefix client && VITE_API_BASE_URL=/ecology npm run build --prefix client -- --base=/ecology/ && npm ci --prefix server && npm run build --prefix server",
     "start": "node server/dist/index.js"
   }
 }
