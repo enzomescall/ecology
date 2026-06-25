@@ -48,12 +48,40 @@ export async function sendOTCEmail(to: string, code: string): Promise<void> {
   `);
 }
 
-export async function sendInviteEmail(to: string, inviterName: string, gameName: string): Promise<void> {
-  await send(to, `${inviterName} invited you to play Ecology`, `
+function getLoginUrl(): string {
+  return process.env.ECOLOGY_PUBLIC_URL ?? "https://enzom.duckdns.org/ecology/";
+}
+
+export function buildInviteEmailHtml(inviterName: string, gameName: string): string {
+  const loginUrl = getLoginUrl();
+  return `
     <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 24px;">
       <h2 style="color: #2d5a2d;">Ecology</h2>
       <p><strong>${inviterName}</strong> invited you to join <strong>${gameName}</strong>!</p>
       <p>Log in to Ecology to accept the invite and start playing.</p>
+      <p><a href="${loginUrl}" style="display: inline-block; padding: 12px 16px; background: #2d5a2d; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">Log in to Ecology</a></p>
+      <p style="color: #666; font-size: 14px;">If the button does not work, copy and paste this link into your browser: <a href="${loginUrl}">${loginUrl}</a></p>
     </div>
-  `);
+  `;
+}
+
+export async function sendInviteEmail(to: string, inviterName: string, gameName: string): Promise<void> {
+  await send(to, `${inviterName} invited you to play Ecology`, buildInviteEmailHtml(inviterName, gameName));
+}
+
+export function buildTurnReminderEmailHtml(gameName: string, round: number, turn: number): string {
+  const loginUrl = getLoginUrl();
+  return `
+    <div style="font-family: sans-serif; max-width: 400px; margin: auto; padding: 24px;">
+      <h2 style="color: #2d5a2d;">Ecology</h2>
+      <p>It is time to play your move in <strong>${gameName}</strong>.</p>
+      <p><strong>Round ${round}, Turn ${turn}</strong> is ready.</p>
+      <p><a href="${loginUrl}" style="display: inline-block; padding: 12px 16px; background: #2d5a2d; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">Play your turn</a></p>
+      <p style="color: #666; font-size: 14px;">If the button does not work, copy and paste this link into your browser: <a href="${loginUrl}">${loginUrl}</a></p>
+    </div>
+  `;
+}
+
+export async function sendTurnReminderEmail(to: string, gameName: string, round: number, turn: number): Promise<void> {
+  await send(to, `Your turn in Ecology: ${gameName}`, buildTurnReminderEmailHtml(gameName, round, turn));
 }

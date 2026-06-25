@@ -35,6 +35,28 @@ const submitMoveSchema = z.object({
   swap: z.object({ a: coordSchema, b: coordSchema }).nullable(),
 });
 
+const inviteMoreSchema = z.object({
+  userId: z.string().min(1),
+  emails: z.array(z.string().email()).min(1),
+});
+
+const removeInviteOrPlayerSchema = z.object({
+  userId: z.string().min(1),
+  email: z.string().email(),
+});
+
+const nudgePlayersSchema = z.object({
+  userId: z.string().min(1),
+  playerIds: z.array(z.string().min(1)).min(1),
+});
+
+function requireLobbyHost(gameId: string, userId: string) {
+  const game = gameService.getGame(gameId);
+  if (game.status !== 'lobby') throw new Error('Invites can only be managed before the game starts');
+  if (game.hostUserId !== userId) throw new Error('Only host can manage invites');
+  return game;
+}
+
 router.post('/', async (req, res) => {
   try {
     const { userId, email, name, gameName, inviteEmails } = createGameSchema.parse(req.body);
@@ -68,6 +90,75 @@ router.post('/:id/start', (req, res) => {
     const { userId } = userIdSchema.parse(req.body);
     const game = gameService.startGame(req.params.id, userId);
     res.json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.post('/:id/nudge', (req, res) => {
+  try {
+    const { userId, playerIds } = nudgePlayersSchema.parse(req.body);
+    const nudged = gameService.nudgePlayers(req.params.id, userId, playerIds);
+    res.json({ success: true, nudged });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.get('/:id/invites', (req, res) => {
+  try {
+    const userId = req.query.userId as string;
+    if (!userId) return res.status(400).json({ error: 'userId query param required' });
+    const game = requireLobbyHost(req.params.id, userId);
+    res.json({
+      pending: inviteStore.getInvitesForGame(game.id),
+      accepted: game.players,
+    });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.post('/:id/invites', async (req, res) => {
+  try {
+    const { userId, emails } = inviteMoreSchema.parse(req.body);
+    const game = requireLobbyHost(req.params.id, userId);
+    const hostName = game.players.find(p => p.userId === game.hostUserId)?.name ?? 'Host';
+    const existingAccepted = new Set(game.players.map(p => p.email.trim().toLowerCase()));
+    const existingPending = new Set(inviteStore.getInvitesForGame(game.id).map(i => i.invitedEmail.trim().toLowerCase()));
+    const created = [];
+
+    for (const rawEmail of emails) {
+      const email = rawEmail.trim().toLowerCase();
+      if (existingAccepted.has(email) || existingPending.has(email)) continue;
+      const invite = inviteStore.createInvite(game.id, game.name, email, hostName);
+      created.push(invite);
+      existingPending.add(email);
+      sendInviteEmail(email, hostName, game.name).catch(() => {});
+    }
+
+    res.status(201).json({
+      created,
+      pending: inviteStore.getInvitesForGame(game.id),
+      accepted: game.players,
+    });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.post('/:id/invites/remove', (req, res) => {
+  try {
+    const { userId, email } = removeInviteOrPlayerSchema.parse(req.body);
+    const game = requireLobbyHost(req.params.id, userId);
+    const removedPending = inviteStore.deleteInviteForGameByEmail(game.id, email);
+    const updatedGame = removedPending ? game : gameService.removeLobbyPlayer(game.id, userId, email);
+
+    res.json({
+      success: true,
+      pending: inviteStore.getInvitesForGame(game.id),
+      accepted: updatedGame.players,
+    });
   } catch (err) {
     handleError(res, err);
   }

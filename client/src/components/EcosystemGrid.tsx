@@ -8,6 +8,7 @@ interface PlacedCard { card: Card; coord: Coord; }
 
 interface Props {
   ecosystem: PlacedCard[];
+  hiddenPlacements?: Coord[];
   validPlacements?: Coord[];
   onCellClick?: (coord: Coord) => void;
   selectedCell?: Coord | null;
@@ -19,10 +20,10 @@ interface Props {
 
 function coordKey(c: Coord) { return `${c.x},${c.y}`; }
 
-function computeBounds(ecosystem: PlacedCard[], validPlacements?: Coord[]) {
-  if (ecosystem.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+function computeBounds(ecosystem: PlacedCard[], validPlacements?: Coord[], hiddenPlacements?: Coord[]) {
+  const allCoords = [...ecosystem.map(p => p.coord), ...(hiddenPlacements ?? [])];
+  if (allCoords.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
-  const allCoords = ecosystem.map(p => p.coord);
   const origMinX = Math.min(...allCoords.map(c => c.x));
   const origMaxX = Math.max(...allCoords.map(c => c.x));
   const origMinY = Math.min(...allCoords.map(c => c.y));
@@ -37,12 +38,13 @@ function computeBounds(ecosystem: PlacedCard[], validPlacements?: Coord[]) {
 }
 
 export function EcosystemGrid({
-  ecosystem, validPlacements, onCellClick, selectedCell,
+  ecosystem, hiddenPlacements, validPlacements, onCellClick, selectedCell,
   size = 'md', swapMode, swapSelection = [], onSwapSelect,
 }: Props) {
-  const { minX, maxX, minY, maxY } = computeBounds(ecosystem, validPlacements);
+  const { minX, maxX, minY, maxY } = computeBounds(ecosystem, validPlacements, hiddenPlacements);
   const cols = maxX - minX + 1;
   const cardByCoord = new Map(ecosystem.map(p => [coordKey(p.coord), p]));
+  const hiddenSet = new Set((hiddenPlacements ?? []).map(coordKey));
   const validSet = new Set((validPlacements ?? []).map(coordKey));
   const cellPx = size === 'sm' ? 44 : 68;
 
@@ -51,6 +53,7 @@ export function EcosystemGrid({
     for (let x = minX; x <= maxX; x++) {
       const key = coordKey({ x, y });
       const placed = cardByCoord.get(key);
+      const isHidden = hiddenSet.has(key);
       const isValid = validSet.has(key);
       const isSelected = selectedCell && selectedCell.x === x && selectedCell.y === y;
       const isSwapSelected = swapSelection.some(s => s.x === x && s.y === y);
@@ -68,6 +71,22 @@ export function EcosystemGrid({
               onClick={handleClick}
             />
           </div>
+        );
+      } else if (isHidden) {
+        cells.push(
+          <div
+            key={key}
+            aria-label="Hidden submitted card"
+            title="Opponent submitted a hidden card here"
+            style={{
+              width: cellPx,
+              height: cellPx + 20,
+              border: '2px solid #111827',
+              borderRadius: 'var(--radius-lg)',
+              background: 'linear-gradient(145deg, #050505, #1f1f1f)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          />
         );
       } else if (isValid && size !== 'sm') {
         cells.push(

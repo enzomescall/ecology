@@ -1,10 +1,19 @@
-import type { Game, EcoMove, GameStateResponse } from '../types/game.js';
-import type { PlacedCard } from '../types/card.js';
+import type { Game, GamePlayer, EcoMove, GameStateResponse } from '../types/game.js';
+import type { PlacedCard, Coord } from '../types/card.js';
 import * as gameStore from '../data/gameStore.js';
 import * as deckService from './deckService.js';
 import * as ecosystemService from './ecosystemService.js';
 import { computeScores } from './scoring/index.js';
+import { sendTurnReminderEmail } from './emailService.js';
 import { v4 as uuidv4 } from 'uuid';
+
+type TurnReminderEmailSender = (to: string, gameName: string, round: number, turn: number) => Promise<void>;
+
+let turnReminderEmailSender: TurnReminderEmailSender = sendTurnReminderEmail;
+
+export function setTurnReminderEmailSenderForTests(sender: TurnReminderEmailSender | null): void {
+  turnReminderEmailSender = sender ?? sendTurnReminderEmail;
+}
 
 export function createGame(userId: string, email: string, name: string, gameName?: string): Game {
   const id = uuidv4();
@@ -61,7 +70,9 @@ export function startGame(gameId: string, userId: string): Game {
   }
   game.submittedMovesByPlayerId = {};
 
-  return gameStore.updateGame(gameId, game);
+  const updatedGame = gameStore.updateGame(gameId, game);
+  sendTurnReminderEmails(updatedGame);
+  return updatedGame;
 }
 
 export function submitMove(gameId: string, userId: string, move: EcoMove): Game {
@@ -146,7 +157,43 @@ function checkAndResolveTurn(game: Game): Game {
     }
   }
 
-  return gameStore.updateGame(game.id, game);
+  const updatedGame = gameStore.updateGame(game.id, game);
+  sendTurnReminderEmails(updatedGame);
+  return updatedGame;
+}
+
+function sendTurnReminderEmails(game: Game): void {
+  if (game.status !== 'active') return;
+  sendTurnReminderEmailsToPlayers(game, game.playerOrder);
+}
+
+function sendTurnReminderEmailsToPlayers(game: Game, playerIds: string[]): GamePlayer[] {
+  const sentPlayers: GamePlayer[] = [];
+  const requested = new Set(playerIds);
+
+  for (const playerId of game.playerOrder) {
+    if (!requested.has(playerId)) continue;
+    const player = game.players.find(p => p.userId === playerId);
+    if (!player || player.leftGame) continue;
+    sentPlayers.push(player);
+    turnReminderEmailSender(player.email, game.name, game.round, game.turn).catch(() => {});
+  }
+
+  return sentPlayers;
+}
+
+export function nudgePlayers(gameId: string, hostUserId: string, playerIds: string[]): GamePlayer[] {
+  const game = requireGame(gameId);
+  if (game.hostUserId !== hostUserId) throw new Error('Only host can nudge players');
+  if (game.status !== 'active') throw new Error('Players can only be nudged after the game starts');
+  if (playerIds.length === 0) throw new Error('Choose at least one player to nudge');
+
+  const validPlayerIds = new Set(game.players.filter(p => !p.leftGame).map(p => p.userId));
+  const uniquePlayerIds = Array.from(new Set(playerIds));
+  const invalidPlayerId = uniquePlayerIds.find(id => !validPlayerIds.has(id));
+  if (invalidPlayerId) throw new Error('Can only nudge active players in this game');
+
+  return sendTurnReminderEmailsToPlayers(game, uniquePlayerIds);
 }
 
 export function getGameState(gameId: string, userId: string): GameStateResponse {
@@ -154,15 +201,24 @@ export function getGameState(gameId: string, userId: string): GameStateResponse 
   requirePlayer(game, userId);
 
   const opponentEcosystems: Record<string, PlacedCard[]> = {};
+  const opponentSubmittedMoves: Record<string, { coord: Coord }> = {};
   for (const p of game.players) {
     if (p.userId !== userId) {
       opponentEcosystems[p.userId] = game.ecosystemsByPlayerId[p.userId] ?? [];
+      const submittedOpponentMove = game.submittedMovesByPlayerId[p.userId];
+      if (submittedOpponentMove) {
+        opponentSubmittedMoves[p.userId] = { coord: submittedOpponentMove.coord };
+      }
     }
   }
 
   const waitingFor = game.playerOrder
     .filter(id => !game.submittedMovesByPlayerId[id])
     .map(id => game.players.find(p => p.userId === id)!.name);
+
+  const submittedMove = game.submittedMovesByPlayerId[userId];
+  const hand = game.handsByPlayerId[userId]!;
+  const submittedCard = submittedMove ? hand.find(card => card.id === submittedMove.cardId) : undefined;
 
   return {
     game: {
@@ -174,10 +230,12 @@ export function getGameState(gameId: string, userId: string): GameStateResponse 
       playerOrder: game.playerOrder,
       players: game.players,
     },
-    hand: game.handsByPlayerId[userId]!,
+    hand,
     ecosystem: game.ecosystemsByPlayerId[userId]!,
     opponentEcosystems,
-    hasSubmitted: !!game.submittedMovesByPlayerId[userId],
+    opponentSubmittedMoves,
+    hasSubmitted: !!submittedMove,
+    ...(submittedMove && submittedCard ? { submittedMove, submittedCard } : {}),
     waitingFor,
     ...(game.status === 'finished' && game.scoresByPlayerId ? { scores: game.scoresByPlayerId } : {}),
   };
@@ -194,6 +252,29 @@ export function leaveGame(gameId: string, userId: string): Game {
     game.status = 'finished';
     game.finishedAt = new Date();
   }
+
+  return gameStore.updateGame(gameId, game);
+}
+
+export function getGame(gameId: string): Game {
+  return requireGame(gameId);
+}
+
+export function removeLobbyPlayer(gameId: string, hostUserId: string, email: string): Game {
+  const game = requireGame(gameId);
+  if (game.status !== 'lobby') throw new Error('Players can only be removed before the game starts');
+  if (game.hostUserId !== hostUserId) throw new Error('Only host can remove players');
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const player = game.players.find(p => p.email.trim().toLowerCase() === normalizedEmail);
+  if (!player) throw new Error('Player not found in this game');
+  if (player.userId === game.hostUserId) throw new Error('Host cannot be removed from their own game');
+
+  game.players = game.players.filter(p => p.userId !== player.userId);
+  game.playerOrder = game.playerOrder.filter(id => id !== player.userId);
+  delete game.handsByPlayerId[player.userId];
+  delete game.submittedMovesByPlayerId[player.userId];
+  delete game.ecosystemsByPlayerId[player.userId];
 
   return gameStore.updateGame(gameId, game);
 }

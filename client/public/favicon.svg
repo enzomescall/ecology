@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Ecology tree icon">
+  <rect width="256" height="256" rx="48" fill="#F5F3E8"/>
+  <path d="M128 42C97 42 72 67 72 98c0 6 1 12 3 17-21 8-36 28-36 51 0 31 25 56 56 56h66c31 0 56-25 56-56 0-23-15-43-36-51 2-5 3-11 3-17 0-31-25-56-56-56z" fill="#2F7D4A"/>
+  <path d="M116 135h24v67c0 7-5 12-12 12s-12-5-12-12v-67z" fill="#8B5A2B"/>
+  <path d="M128 74v92" stroke="#1F5F38" stroke-width="10" stroke-linecap="round"/>
+  <path d="M128 126c-19 0-36-12-44-30" stroke="#1F5F38" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M128 126c19 0 36-12 44-30" stroke="#1F5F38" stroke-width="10" stroke-linecap="round" fill="none"/>
+</svg>

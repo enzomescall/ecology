@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, LogOut } from 'lucide-react';
-import { getGameState, submitMove, leaveGame, startGame } from '../services/gameApi';
-import type { Card, Coord, PlacedCard, GameStateResponse, CardType } from '../services/gameApi';
+import { ArrowLeft, LogOut, Mail, Plus, X } from 'lucide-react';
+import { getGameState, submitMove, leaveGame, startGame, getGameInvites, inviteMorePlayers, removeLobbyInviteOrPlayer, nudgePlayers } from '../services/gameApi';
+import type { Card, Coord, PlacedCard, GameStateResponse, CardType, LobbyInviteState } from '../services/gameApi';
 import { CardTile } from './CardTile';
 import { EcosystemGrid } from './EcosystemGrid';
 import { HowToPlayModal, HelpButton } from './HowToPlayModal';
@@ -63,6 +63,15 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showScoringHint, setShowScoringHint] = useState(false);
   const [pendingPlacedCard, setPendingPlacedCard] = useState<PlacedCard | null>(null);
+  const [lobbyInvites, setLobbyInvites] = useState<LobbyInviteState | null>(null);
+  const [inviteInputs, setInviteInputs] = useState<string[]>(['']);
+  const [isManagingInvites, setIsManagingInvites] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [selectedNudgePlayerIds, setSelectedNudgePlayerIds] = useState<string[]>([]);
+  const [isNudgingPlayers, setIsNudgingPlayers] = useState(false);
+  const [nudgeMessage, setNudgeMessage] = useState<string | null>(null);
+
+  const isLobbyHost = gameState?.game.status === 'lobby' && gameState.game.players[0]?.userId === user.userId;
 
   // Polling
   const fetchState = useCallback(async () => {
@@ -81,6 +90,26 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     const id = setInterval(fetchState, 2000);
     return () => clearInterval(id);
   }, [fetchState]);
+
+  const fetchLobbyInvites = useCallback(async () => {
+    if (!isLobbyHost) return;
+    try {
+      const state = await getGameInvites(gameId, user.userId);
+      setLobbyInvites(state);
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to load invites');
+    }
+  }, [gameId, user.userId, isLobbyHost]);
+
+  useEffect(() => {
+    if (!isLobbyHost) {
+      setLobbyInvites(null);
+      return;
+    }
+    fetchLobbyInvites();
+    const id = setInterval(fetchLobbyInvites, 5000);
+    return () => clearInterval(id);
+  }, [fetchLobbyInvites, isLobbyHost]);
 
   // Clear pending placed card once server state confirms it
   useEffect(() => {
@@ -154,6 +183,77 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     }
   };
 
+  const addInviteField = () => setInviteInputs(prev => [...prev, '']);
+
+  const updateInviteInput = (index: number, value: string) => {
+    setInviteInputs(prev => prev.map((email, i) => i === index ? value : email));
+  };
+
+  const removeInviteInput = (index: number) => {
+    setInviteInputs(prev => prev.length === 1 ? [''] : prev.filter((_, i) => i !== index));
+  };
+
+  const handleSendInvites = async () => {
+    const emails = Array.from(new Set(inviteInputs.map(email => email.trim().toLowerCase()).filter(Boolean)));
+    if (emails.length === 0) {
+      setInviteMessage('Add at least one email to invite.');
+      return;
+    }
+
+    setIsManagingInvites(true);
+    setInviteMessage(null);
+    try {
+      const state = await inviteMorePlayers(gameId, user.userId, emails);
+      setLobbyInvites(state);
+      setInviteInputs(['']);
+      setInviteMessage(state.created?.length ? `Sent ${state.created.length} invite${state.created.length === 1 ? '' : 's'}.` : 'Everyone entered was already in this lobby.');
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to send invites');
+    } finally {
+      setIsManagingInvites(false);
+    }
+  };
+
+  const handleRemoveInviteOrPlayer = async (email: string) => {
+    setIsManagingInvites(true);
+    setInviteMessage(null);
+    try {
+      const state = await removeLobbyInviteOrPlayer(gameId, user.userId, email);
+      setLobbyInvites(state);
+      await fetchState();
+      setInviteMessage(`Removed ${email} from this lobby.`);
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to remove email');
+    } finally {
+      setIsManagingInvites(false);
+    }
+  };
+
+  const toggleNudgePlayer = (playerId: string) => {
+    setSelectedNudgePlayerIds(prev => (
+      prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
+    ));
+  };
+
+  const handleNudgePlayers = async () => {
+    if (selectedNudgePlayerIds.length === 0) {
+      setNudgeMessage('Choose at least one player to nudge.');
+      return;
+    }
+
+    setIsNudgingPlayers(true);
+    setNudgeMessage(null);
+    try {
+      const response = await nudgePlayers(gameId, user.userId, selectedNudgePlayerIds);
+      setSelectedNudgePlayerIds([]);
+      setNudgeMessage(`Sent follow-up email${response.nudged.length === 1 ? '' : 's'} to ${response.nudged.length} player${response.nudged.length === 1 ? '' : 's'}.`);
+    } catch (err) {
+      setNudgeMessage(err instanceof Error ? err.message : 'Failed to send follow-up emails');
+    } finally {
+      setIsNudgingPlayers(false);
+    }
+  };
+
   // Loading / error states
   if (!gameState) {
     return (
@@ -163,12 +263,17 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     );
   }
 
-  const { game, hand, ecosystem, opponentEcosystems, hasSubmitted, waitingFor } = gameState;
+  const { game, hand, ecosystem, opponentEcosystems, opponentSubmittedMoves, hasSubmitted, waitingFor } = gameState;
   const isHost = game.players[0]?.userId === user.userId;
 
-  // Merge pending placed card into ecosystem for immediate preview
-  const displayEcosystem = pendingPlacedCard
-    ? [...ecosystem, pendingPlacedCard]
+  // Merge pending placed card into ecosystem for immediate preview. If the page refreshed
+  // after submitting but before the turn resolved, restore that preview from server state.
+  const submittedPlacedCard = gameState.submittedMove && gameState.submittedCard
+    ? { card: gameState.submittedCard, coord: gameState.submittedMove.coord }
+    : null;
+  const previewPlacedCard = pendingPlacedCard ?? submittedPlacedCard;
+  const displayEcosystem = previewPlacedCard && !ecosystem.some(p => coordEq(p.coord, previewPlacedCard.coord))
+    ? [...ecosystem, previewPlacedCard]
     : ecosystem;
 
   // --- Lobby View ---
@@ -184,6 +289,9 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         setIsSubmitting(false);
       }
     };
+
+    const acceptedPlayers = lobbyInvites?.accepted ?? game.players;
+    const pendingInvites = lobbyInvites?.pending ?? [];
 
     return (
       <div style={{ minHeight: '100vh' }}>
@@ -202,45 +310,151 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             </div>
           </div>
         </header>
-        <main className="page-content" style={{ textAlign: 'center' }}>
-          <h3 className="mb-4">Players ({game.players.length})</h3>
-          <div className="space-stack-sm mb-6">
-            {game.players.map(p => (
-              <div key={p.userId} style={{
-                padding: '0.75rem 1rem', backgroundColor: 'var(--color-bg-card)',
-                border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)',
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-              }}>
-                <div style={{
-                  width: '2rem', height: '2rem', borderRadius: '0.5rem',
-                  backgroundColor: p.userId === user.userId ? 'var(--color-forest-600)' : 'var(--color-sky-500)',
-                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.75rem', fontWeight: 'bold',
-                }}>
-                  {p.name.slice(0, 2).toUpperCase()}
-                </div>
-                <span>{p.name}{p.userId === user.userId ? ' (you)' : ''}</span>
-                {p.userId === game.players[0]?.userId && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>Host</span>
-                )}
-              </div>
-            ))}
-          </div>
+        <main className="page-content lobby-page">
+          <section className="lobby-hero card">
+            <div className="lobby-hero-kicker">Waiting room</div>
+            <h2>{acceptedPlayers.length < 2 ? 'Invite one more player to begin' : 'Ready when you are'}</h2>
+            <p>
+              {isHost
+                ? 'Send more invitations, track pending replies, and remove anyone from the lobby before the game starts.'
+                : 'Waiting for the host to start the game.'}
+            </p>
+            {isHost ? (
+              <button
+                className="button-primary"
+                onClick={handleStart}
+                disabled={acceptedPlayers.length < 2 || isSubmitting}
+                style={{ opacity: acceptedPlayers.length < 2 ? 0.55 : 1 }}
+              >
+                {isSubmitting ? 'Starting...' : acceptedPlayers.length < 2 ? 'Need at least 2 players' : 'Start Game'}
+              </button>
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Waiting for host to start the game...</p>
+            )}
+          </section>
+
           {error && (
             <p className="text-sm mb-4" style={{ color: 'var(--color-error)' }}>{error}</p>
           )}
-          {isHost ? (
-            <button
-              className="button-primary"
-              onClick={handleStart}
-              disabled={game.players.length < 2 || isSubmitting}
-              style={{ opacity: game.players.length < 2 ? 0.5 : 1 }}
-            >
-              {isSubmitting ? 'Starting...' : game.players.length < 2 ? 'Need at least 2 players' : 'Start Game'}
-            </button>
-          ) : (
-            <p style={{ color: 'var(--color-text-muted)' }}>Waiting for host to start the game...</p>
+
+          {isHost && (
+            <section className="lobby-panel card">
+              <div className="lobby-panel-header">
+                <div>
+                  <div className="lobby-hero-kicker">Add players</div>
+                  <h3>Send more email invites</h3>
+                </div>
+                <Mail size={22} color="var(--color-forest-600)" />
+              </div>
+
+              <div className="form-input-list">
+                {inviteInputs.map((email, index) => (
+                  <div className="lobby-invite-input-row" key={index}>
+                    <input
+                      className="form-input"
+                      type="email"
+                      placeholder="player@example.com"
+                      value={email}
+                      onChange={(e) => updateInviteInput(index, e.target.value)}
+                    />
+                    <button
+                      className="button-icon button-icon-sm"
+                      onClick={() => removeInviteInput(index)}
+                      aria-label="Remove email field"
+                      type="button"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="lobby-actions-row">
+                <button className="button-secondary" onClick={addInviteField} type="button">
+                  <Plus size={16} /> Add another
+                </button>
+                <button className="button-primary" onClick={handleSendInvites} disabled={isManagingInvites} type="button">
+                  {isManagingInvites ? 'Sending...' : 'Send invites'}
+                </button>
+              </div>
+              {inviteMessage && (
+                <p className="text-sm mt-3" style={{ color: inviteMessage.startsWith('Failed') ? 'var(--color-error)' : 'var(--color-text-muted)' }}>
+                  {inviteMessage}
+                </p>
+              )}
+            </section>
           )}
+
+          <section className="lobby-roster-grid">
+            <div className="lobby-panel card">
+              <div className="lobby-panel-header">
+                <div>
+                  <div className="lobby-hero-kicker">Accepted</div>
+                  <h3>Joined players ({acceptedPlayers.length})</h3>
+                </div>
+                <span className="lobby-count-pill">{acceptedPlayers.length}/6</span>
+              </div>
+              <div className="space-stack-sm">
+                {acceptedPlayers.map(p => (
+                  <div className="lobby-person-row" key={p.userId}>
+                    <div className="lobby-avatar" style={{ backgroundColor: p.userId === user.userId ? 'var(--color-forest-600)' : 'var(--color-sky-500)' }}>
+                      {p.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="lobby-person-copy">
+                      <strong>{p.name}{p.userId === user.userId ? ' (you)' : ''}</strong>
+                      <span>{p.email}</span>
+                    </div>
+                    {p.userId === game.players[0]?.userId ? (
+                      <span className="label-badge">Host</span>
+                    ) : isHost ? (
+                      <button
+                        className="lobby-remove-button"
+                        onClick={() => handleRemoveInviteOrPlayer(p.email)}
+                        disabled={isManagingInvites}
+                        aria-label={`Remove ${p.email}`}
+                        type="button"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lobby-panel card">
+              <div className="lobby-panel-header">
+                <div>
+                  <div className="lobby-hero-kicker">Pending</div>
+                  <h3>Invited, not replied ({pendingInvites.length})</h3>
+                </div>
+              </div>
+              <div className="space-stack-sm">
+                {pendingInvites.length === 0 ? (
+                  <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No outstanding invitations.</p>
+                ) : pendingInvites.map(invite => (
+                  <div className="lobby-person-row pending" key={invite.id}>
+                    <div className="lobby-avatar pending"><Mail size={15} /></div>
+                    <div className="lobby-person-copy">
+                      <strong>{invite.invitedEmail}</strong>
+                      <span>Waiting for reply</span>
+                    </div>
+                    {isHost && (
+                      <button
+                        className="lobby-remove-button"
+                        onClick={() => handleRemoveInviteOrPlayer(invite.invitedEmail)}
+                        disabled={isManagingInvites}
+                        aria-label={`Remove ${invite.invitedEmail}`}
+                        type="button"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
         </main>
         <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
       </div>
@@ -299,6 +513,50 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
           }}>
             {error}
           </div>
+        )}
+
+        {isHost && (
+          <section className="card mb-4" style={{ padding: '1rem' }}>
+            <div className="mb-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>Nudge players</h3>
+                <p className="text-sm" style={{ margin: '0.25rem 0 0', color: 'var(--color-text-muted)' }}>
+                  Send a follow-up email with the game link to selected players.
+                </p>
+              </div>
+              <Mail size={20} color="var(--color-forest-600)" />
+            </div>
+            <div className="space-stack-sm">
+              {game.players.filter(p => !p.leftGame).map(player => (
+                <label key={player.userId} className="lobby-person-row" style={{ cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedNudgePlayerIds.includes(player.userId)}
+                    onChange={() => toggleNudgePlayer(player.userId)}
+                    disabled={isNudgingPlayers}
+                  />
+                  <div className="lobby-person-copy">
+                    <strong>{player.name}{player.userId === user.userId ? ' (you)' : ''}</strong>
+                    <span>{player.email}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <button
+              className="button-secondary mt-3"
+              onClick={handleNudgePlayers}
+              disabled={isNudgingPlayers || selectedNudgePlayerIds.length === 0}
+              type="button"
+              style={{ opacity: selectedNudgePlayerIds.length === 0 ? 0.55 : 1 }}
+            >
+              {isNudgingPlayers ? 'Sending...' : `Send follow-up email${selectedNudgePlayerIds.length === 1 ? '' : 's'}`}
+            </button>
+            {nudgeMessage && (
+              <p className="text-sm mt-3" style={{ color: nudgeMessage.startsWith('Failed') || nudgeMessage.startsWith('Choose') ? 'var(--color-error)' : 'var(--color-text-muted)' }}>
+                {nudgeMessage}
+              </p>
+            )}
+          </section>
         )}
 
         {/* Hand */}
@@ -415,14 +673,35 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {Object.entries(opponentEcosystems).map(([id, eco]) => {
                 const player = game.players.find(p => p.userId === id);
+                const submittedMove = opponentSubmittedMoves[id];
+                const isWaiting = !submittedMove;
                 return (
-                  <div key={id} className="card" style={{ padding: '0.75rem' }}>
+                  <div
+                    key={id}
+                    className="card"
+                    style={{
+                      padding: '0.75rem',
+                      border: `2px solid ${submittedMove ? '#8b5a2b' : '#16a34a'}`,
+                      boxShadow: submittedMove ? '0 0 0 2px rgba(139,90,43,0.12)' : '0 0 0 2px rgba(22,163,74,0.12)',
+                    }}
+                  >
                     <p className="text-sm mb-2" style={{
                       fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, marginBottom: 6,
                     }}>
                       {player?.name ?? id}
+                      <span style={{
+                        marginLeft: 8,
+                        color: submittedMove ? '#8b5a2b' : '#16a34a',
+                        fontWeight: 700,
+                      }}>
+                        {isWaiting ? 'Playing' : 'Submitted'}
+                      </span>
                     </p>
-                    <EcosystemGrid ecosystem={eco} size="sm" />
+                    <EcosystemGrid
+                      ecosystem={eco}
+                      hiddenPlacements={submittedMove ? [submittedMove.coord] : undefined}
+                      size="sm"
+                    />
                   </div>
                 );
               })}

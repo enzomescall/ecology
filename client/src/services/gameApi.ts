@@ -46,7 +46,10 @@ export interface GameStateResponse {
   hand: Card[];
   ecosystem: PlacedCard[];
   opponentEcosystems: Record<string, PlacedCard[]>;
+  opponentSubmittedMoves: Record<string, { coord: Coord }>;
   hasSubmitted: boolean;
+  submittedMove?: { cardId: string; coord: Coord; swap: { a: Coord; b: Coord } | null };
+  submittedCard?: Card;
   waitingFor: string[];
   scores?: Record<string, ScoreBreakdown>;
 }
@@ -87,6 +90,9 @@ export const joinGame = (gameId: string, userId: string, email: string, name: st
 export const startGame = (gameId: string, userId: string) =>
   post<GameSummary>(`${BASE_URL}/${gameId}/start`, { userId });
 
+export const nudgePlayers = (gameId: string, userId: string, playerIds: string[]) =>
+  post<{ success: boolean; nudged: GamePlayer[] }>(`${BASE_URL}/${gameId}/nudge`, { userId, playerIds });
+
 export const getGameState = (gameId: string, userId: string) =>
   get<GameStateResponse>(`${BASE_URL}/${gameId}?userId=${encodeURIComponent(userId)}`);
 
@@ -122,6 +128,13 @@ export interface Invite {
   createdAt: string;
 }
 
+export interface LobbyInviteState {
+  pending: Invite[];
+  accepted: GamePlayer[];
+  created?: Invite[];
+  success?: boolean;
+}
+
 export const getInvites = (email: string) =>
   get<Invite[]>(`${BASE_URL}/invites?email=${encodeURIComponent(email)}`);
 
@@ -130,6 +143,15 @@ export const acceptInvite = (inviteId: string, userId: string, email: string, na
 
 export const declineInvite = (inviteId: string) =>
   post<{ success: boolean }>(`${BASE_URL}/invites/${inviteId}/decline`, {});
+
+export const getGameInvites = (gameId: string, userId: string) =>
+  get<LobbyInviteState>(`${BASE_URL}/${gameId}/invites?userId=${encodeURIComponent(userId)}`);
+
+export const inviteMorePlayers = (gameId: string, userId: string, emails: string[]) =>
+  post<LobbyInviteState>(`${BASE_URL}/${gameId}/invites`, { userId, emails });
+
+export const removeLobbyInviteOrPlayer = (gameId: string, userId: string, email: string) =>
+  post<LobbyInviteState>(`${BASE_URL}/${gameId}/invites/remove`, { userId, email });
 
 export const getUserGames = (userId: string) =>
   get<GameSummary[]>(`${BASE_URL}/user-games?userId=${encodeURIComponent(userId)}`);

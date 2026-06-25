@@ -27,6 +27,10 @@ export function getInvitesForEmail(email: string): Invite[] {
   return Array.from(invites.values()).filter(i => i.invitedEmail === email);
 }
 
+export function getInvitesForGame(gameId: string): Invite[] {
+  return Array.from(invites.values()).filter(i => i.gameId === gameId);
+}
+
 export function getInvite(id: string): Invite | null {
   return invites.get(id) ?? null;
 }
@@ -34,4 +38,15 @@ export function getInvite(id: string): Invite | null {
 export function deleteInvite(id: string): void {
   invites.delete(id);
   persist();
+}
+
+export function deleteInviteForGameByEmail(gameId: string, email: string): boolean {
+  const normalizedEmail = email.trim().toLowerCase();
+  const invite = Array.from(invites.values()).find(
+    i => i.gameId === gameId && i.invitedEmail.trim().toLowerCase() === normalizedEmail
+  );
+  if (!invite) return false;
+  invites.delete(invite.id);
+  persist();
+  return true;
 }

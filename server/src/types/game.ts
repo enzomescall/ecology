@@ -51,7 +51,10 @@ export interface GameStateResponse {
   hand: Card[];
   ecosystem: PlacedCard[];
   opponentEcosystems: Record<string, PlacedCard[]>;
+  opponentSubmittedMoves: Record<string, { coord: Coord }>;
   hasSubmitted: boolean;
+  submittedMove?: EcoMove;
+  submittedCard?: Card;
   waitingFor: string[];
   scores?: Record<string, ScoreBreakdown>;
 }
