@@ -77,6 +77,21 @@ class Game:
         g._cards_per_hand = cards_per_hand  # type: ignore[attr-defined]
         return g
 
+    # ---- cloning (for determinized search) ----
+    def clone(self) -> "Game":
+        """Shallow-but-safe copy: Card/PlacedCard are frozen, so copying the list
+        containers is enough to simulate independently."""
+        g = Game(
+            num_players=self.num_players, rng=self.rng,
+            player_order=list(self.player_order), round=self.round, turn=self.turn,
+            pass_direction=self.pass_direction,
+            hands={s: list(h) for s, h in self.hands.items()},
+            ecosystems={s: list(e) for s, e in self.ecosystems.items()},
+            deck=list(self.deck), status=self.status, scores=self.scores,
+        )
+        g._cards_per_hand = getattr(self, "_cards_per_hand", 10)  # type: ignore[attr-defined]
+        return g
+
     # ---- queries ----
     def hand(self, seat: int) -> List[Card]:
         return self.hands[seat]
