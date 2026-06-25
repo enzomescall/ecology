@@ -128,7 +128,9 @@ class ISMCTS:
 
     def _advance(self, g: Game, seat: int, action: int):
         moves = {}
-        moves[seat] = action_to_move(g, seat, action, greedy_swap=True)
+        # Internal sim placements skip the O(cells^2) greedy-swap search for speed;
+        # the real move chosen by the agent still resolves the swap greedily.
+        moves[seat] = action_to_move(g, seat, action, greedy_swap=False)
         for s in g.player_order:
             if s == seat:
                 continue
