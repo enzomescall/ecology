@@ -20,14 +20,27 @@ ecology_env/      Faithful Python port of the engine
   board.py        placement legality, 5x4 bounding box, rabbit swap
   scoring.py      10 categories + diversity penalty + competitive rank
   game.py         draft / pass / 2-round loop, terminal scoring
-tests/
-  test_smoke.py   plays full random games for 2-6 players
-  test_parity.py  scores random boards in Python AND the TS engine, asserts equal
-  parity_ts.ts    tsx harness that calls the real server computeScores
+  encode.py       state -> tensors, fixed 462-action space + legal masking
+tests/            test_smoke / test_encode / test_baselines / test_ismcts /
+                  test_parity / test_serve_cli + integration_node.ts
 baselines.py      random + greedy agents (training opponents; easy/medium tiers)
-selfplay/         policy+value net, ISMCTS, AlphaZero-style training (planned)
-export/           ONNX export (planned)
-serve/            onnxruntime-node integration + difficulty knobs (planned)
+selfplay/         net, ISMCTS, self-play, training, arena, rewards
+serve/            ai_move.py CLI + difficulty agent factory
+export/to_onnx.py ONNX export for the pure-Node serving path
+benchmark.py      head-to-head difficulty ladder
+demo.py           play one game between tiers, render boards + scores
+play.py           play vs the bots in your terminal
+run_tests.sh      fast suite (+ --all for slow/parity/integration)
+```
+
+Quick things to try:
+
+```bash
+cd ai
+python3 demo.py --players easy medium hard      # watch the AIs play
+python3 play.py --opponents medium hard         # play against them
+./run_tests.sh                                  # fast test suite
+python3 -m selfplay.train --iterations 120      # train the Impossible net
 ```
 
 ## Key facts that shape the AI
@@ -61,5 +74,7 @@ temperature + blunder rate:
 |------|-----------|
 | Easy | random / greedy with heavy noise |
 | Medium | greedy 1-step marginal score |
-| Hard | ISMCTS, modest budget, heuristic rollouts |
-| Impossible | ISMCTS guided by the self-play net, large budget |
+| Hard | ISMCTS with greedy-rollout leaf values (beats medium 83%) |
+| Impossible | ISMCTS guided by the self-play net (fallback: deeper rollout search) |
+
+See `../docs/ai-design.md` for the full design and the Node integration.
