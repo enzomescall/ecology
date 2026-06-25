@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, LogOut, Mail, Plus, X } from 'lucide-react';
-import { getGameState, submitMove, leaveGame, startGame, getGameInvites, inviteMorePlayers, removeLobbyInviteOrPlayer, nudgePlayers } from '../services/gameApi';
+import { getGameState, submitMove, leaveGame, startGame, getGameInvites, inviteMorePlayers, removeLobbyInviteOrPlayer, nudgePlayers, addBot, removeBot } from '../services/gameApi';
+import type { BotDifficulty } from '../services/gameApi';
 import type { Card, Coord, PlacedCard, GameStateResponse, CardType, LobbyInviteState } from '../services/gameApi';
 import { CardTile } from './CardTile';
 import { EcosystemGrid } from './EcosystemGrid';
@@ -64,6 +65,7 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
   const [showScoringHint, setShowScoringHint] = useState(false);
   const [pendingPlacedCard, setPendingPlacedCard] = useState<PlacedCard | null>(null);
   const [lobbyInvites, setLobbyInvites] = useState<LobbyInviteState | null>(null);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
   const [inviteInputs, setInviteInputs] = useState<string[]>(['']);
   const [isManagingInvites, setIsManagingInvites] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
@@ -229,6 +231,33 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
     }
   };
 
+  const handleAddBot = async (difficulty: BotDifficulty) => {
+    setIsManagingInvites(true);
+    setInviteMessage(null);
+    try {
+      await addBot(gameId, user.userId, difficulty);
+      await fetchState();
+      setInviteMessage(`Added a ${difficulty} bot.`);
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to add bot');
+    } finally {
+      setIsManagingInvites(false);
+    }
+  };
+
+  const handleRemoveBot = async (botUserId: string) => {
+    setIsManagingInvites(true);
+    setInviteMessage(null);
+    try {
+      await removeBot(gameId, user.userId, botUserId);
+      await fetchState();
+    } catch (err) {
+      setInviteMessage(err instanceof Error ? err.message : 'Failed to remove bot');
+    } finally {
+      setIsManagingInvites(false);
+    }
+  };
+
   const toggleNudgePlayer = (playerId: string) => {
     setSelectedNudgePlayerIds(prev => (
       prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
@@ -385,6 +414,42 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
             </section>
           )}
 
+          {isHost && (
+            <section className="lobby-panel card">
+              <div className="lobby-panel-header">
+                <div>
+                  <div className="lobby-hero-kicker">Computer players</div>
+                  <h3>Add a bot</h3>
+                </div>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)', marginBottom: 12 }}>
+                Fill empty seats with AI opponents. Easy is beatable; Impossible runs a self-play-trained search.
+              </p>
+              <div className="lobby-actions-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+                <select
+                  className="input"
+                  value={botDifficulty}
+                  onChange={e => setBotDifficulty(e.target.value as BotDifficulty)}
+                  disabled={isManagingInvites || acceptedPlayers.length >= 6}
+                  style={{ maxWidth: 180 }}
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                  <option value="impossible">Impossible</option>
+                </select>
+                <button
+                  className="button-primary"
+                  onClick={() => handleAddBot(botDifficulty)}
+                  disabled={isManagingInvites || acceptedPlayers.length >= 6}
+                  type="button"
+                >
+                  <Plus size={16} /> Add bot
+                </button>
+              </div>
+            </section>
+          )}
+
           <section className="lobby-roster-grid">
             <div className="lobby-panel card">
               <div className="lobby-panel-header">
@@ -395,30 +460,33 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                 <span className="lobby-count-pill">{acceptedPlayers.length}/6</span>
               </div>
               <div className="space-stack-sm">
-                {acceptedPlayers.map(p => (
+                {acceptedPlayers.map(p => {
+                  const isBot = p.userId.startsWith('ai:');
+                  return (
                   <div className="lobby-person-row" key={p.userId}>
-                    <div className="lobby-avatar" style={{ backgroundColor: p.userId === user.userId ? 'var(--color-forest-600)' : 'var(--color-sky-500)' }}>
-                      {p.name.slice(0, 2).toUpperCase()}
+                    <div className="lobby-avatar" style={{ backgroundColor: isBot ? 'var(--color-amber-500, #d97706)' : p.userId === user.userId ? 'var(--color-forest-600)' : 'var(--color-sky-500)' }}>
+                      {isBot ? '🤖' : p.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="lobby-person-copy">
                       <strong>{p.name}{p.userId === user.userId ? ' (you)' : ''}</strong>
-                      <span>{p.email}</span>
+                      <span>{isBot ? 'Computer player' : p.email}</span>
                     </div>
                     {p.userId === game.players[0]?.userId ? (
                       <span className="label-badge">Host</span>
                     ) : isHost ? (
                       <button
                         className="lobby-remove-button"
-                        onClick={() => handleRemoveInviteOrPlayer(p.email)}
+                        onClick={() => isBot ? handleRemoveBot(p.userId) : handleRemoveInviteOrPlayer(p.email)}
                         disabled={isManagingInvites}
-                        aria-label={`Remove ${p.email}`}
+                        aria-label={`Remove ${p.name}`}
                         type="button"
                       >
                         <X size={16} />
                       </button>
                     ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

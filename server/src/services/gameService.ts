@@ -173,6 +173,7 @@ function sendTurnReminderEmailsToPlayers(game: Game, playerIds: string[]): GameP
 
   for (const playerId of game.playerOrder) {
     if (!requested.has(playerId)) continue;
+    if (playerId.startsWith('ai:')) continue; // bots don't get emails
     const player = game.players.find(p => p.userId === playerId);
     if (!player || player.leftGame) continue;
     sentPlayers.push(player);

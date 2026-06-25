@@ -90,6 +90,14 @@ export const joinGame = (gameId: string, userId: string, email: string, name: st
 export const startGame = (gameId: string, userId: string) =>
   post<GameSummary>(`${BASE_URL}/${gameId}/start`, { userId });
 
+export type BotDifficulty = 'easy' | 'medium' | 'hard' | 'impossible';
+
+export const addBot = (gameId: string, userId: string, difficulty: BotDifficulty) =>
+  post<GameSummary>(`${BASE_URL}/${gameId}/bots`, { userId, difficulty });
+
+export const removeBot = (gameId: string, userId: string, botUserId: string) =>
+  post<GameSummary>(`${BASE_URL}/${gameId}/bots/remove`, { userId, botUserId });
+
 export const nudgePlayers = (gameId: string, userId: string, playerIds: string[]) =>
   post<{ success: boolean; nudged: GamePlayer[] }>(`${BASE_URL}/${gameId}/nudge`, { userId, playerIds });
 
