@@ -70,18 +70,23 @@ exploration + model use):
 |------|-----------|----------------|
 | **Easy** | Greedy with ε=0.6 random moves | no |
 | **Medium** | Greedy one-ply heuristic | no |
-| **Hard** | Heuristic-guided ISMCTS (64 sims) | no |
-| **Impossible** | Net-guided ISMCTS (160 sims); falls back to deep heuristic ISMCTS until a strong checkpoint exists | yes (graceful fallback) |
+| **Hard** | Rollout-guided ISMCTS (32 sims) | no |
+| **Impossible** | Net-guided ISMCTS (160 sims); falls back to deeper rollout ISMCTS (64 sims) until a strong checkpoint exists | yes (graceful fallback) |
+
+Hard/Impossible use greedy **rollouts** for leaf values (play the determinized
+game to the end and score the real outcome) rather than a static heuristic. This
+is the single biggest strength lever: at 32 sims, rollout-hard beats
+greedy/medium **83% (58.2 vs 51.5)**, where static-value search was only ~38%.
+At ~2s/move the async game absorbs the cost easily.
 
 The greedy heuristic = solitaire score + weighted competitive potential (stream
 length, wolf count) + a diversity-coverage bonus + a shape regularizer that
 keeps the board on track to finish as a clean 5×4. It also runs a bounded
 rabbit-swap search.
 
-Measured ordering (`ai/benchmark.py`): medium beats easy 100% (54 vs 39); hard
-edges medium (52.7 vs 51.9). The hard/medium gap is intentionally honest —
-greedy is already near-optimal on a solitaire-heavy board, so the lift from
-search alone is modest. The trained net is what widens the top of the ladder.
+Measured ordering (`ai/benchmark.py`): medium beats easy 100% (54 vs 39);
+rollout-hard beats medium 83% (58.2 vs 51.5). The trained net widens the very
+top of the ladder further.
 
 ---
 
