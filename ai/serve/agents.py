@@ -68,10 +68,12 @@ def build_agent(difficulty: str, model_path: Optional[str] = None,
                       file=sys.stderr)
         else:
             import sys
-            print(f"[ai] no model at {path}; impossible falls back to hard", file=sys.stderr)
+            print(f"[ai] no model at {path}; impossible uses deep heuristic search", file=sys.stderr)
+        # Fallback still must be strictly stronger than "hard": use the larger
+        # search budget with the heuristic evaluator.
         ev = HeuristicEvaluator(temperature=3.0, rng=rng)
-        return ISMCTSAgent(ev, n_sims=hard_sims, temperature=0.0,
+        return ISMCTSAgent(ev, n_sims=impossible_sims, temperature=0.0,
                            opponent_agent=GreedyAgent(rng=random.Random(rng.random())),
-                           rng=rng), "hard(fallback)"
+                           rng=rng), "impossible(heuristic)"
 
     raise ValueError(f"unknown difficulty {difficulty!r}; expected one of {DIFFICULTIES}")

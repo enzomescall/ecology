@@ -40,6 +40,7 @@ def train(
     value_weight: float = 1.0,
     eval_every: int = 5,
     eval_games: int = 12,
+    best_bar: float = 0.5,   # only promote to best.pt once it clearly beats greedy
     channels: int = 64,
     blocks: int = 4,
     seed: int = 0,
@@ -108,7 +109,9 @@ def train(
             wr, ns, gs = eval_vs_greedy(net, num_players=3, games=eval_games,
                                         n_sims=n_sims, device=device, seed=1000 + it)
             log(f"   eval vs greedy (3p): win-rate {wr:.0%} | net {ns:.1f} vs greedy {gs:.1f}")
-            if wr >= best_winrate:
+            # Only promote to best.pt once the net genuinely beats greedy, so the
+            # served "impossible" tier never loads a half-trained model.
+            if wr > best_winrate and wr >= best_bar:
                 best_winrate = wr
                 torch.save(net.state_dict(), os.path.join(CKPT_DIR, "best.pt"))
                 log(f"   new best (win-rate {wr:.0%}) -> checkpoints/best.pt")
