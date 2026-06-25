@@ -1,0 +1,991 @@
+{
+  "games": [
+    {
+      "id": "78b18bc9-4ccc-4423-ba5d-4915af264a83",
+      "hostUserId": "user-human",
+      "name": "Bot Test Game",
+      "status": "finished",
+      "round": 2,
+      "turn": 11,
+      "passDirection": "right",
+      "playerOrder": [
+        "user-human",
+        "ai:easy:2e0c7681",
+        "ai:medium:93c7a72d"
+      ],
+      "players": [
+        {
+          "userId": "user-human",
+          "email": "human@test.local",
+          "name": "Human",
+          "joinedAt": "2026-06-25T04:28:12.745Z"
+        },
+        {
+          "userId": "ai:easy:2e0c7681",
+          "email": "ai:easy:2e0c7681@bot.local",
+          "name": "🤖 Easy Bot",
+          "joinedAt": "2026-06-25T04:28:12.746Z"
+        },
+        {
+          "userId": "ai:medium:93c7a72d",
+          "email": "ai:medium:93c7a72d@bot.local",
+          "name": "🤖 Medium Bot",
+          "joinedAt": "2026-06-25T04:28:12.746Z"
+        }
+      ],
+      "handsByPlayerId": {
+        "ai:medium:93c7a72d": [],
+        "user-human": [],
+        "ai:easy:2e0c7681": []
+      },
+      "submittedMovesByPlayerId": {},
+      "ecosystemsByPlayerId": {
+        "user-human": [
+          {
+            "card": {
+              "id": "meadow-8",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-2",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": 0,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "bee-0",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 0,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "deer-0",
+              "type": "deer"
+            },
+            "coord": {
+              "x": -1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "bear-6",
+              "type": "bear"
+            },
+            "coord": {
+              "x": 1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "bee-5",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 0,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-7",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": -1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-7",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": 1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-10",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": -1,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "stream-1",
+              "type": "stream"
+            },
+            "coord": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "wolf-3",
+              "type": "wolf"
+            },
+            "coord": {
+              "x": -2,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-6",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": 2,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-9",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": -1,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "deer-8",
+              "type": "deer"
+            },
+            "coord": {
+              "x": 1,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-4",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": -2,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "bee-10",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 2,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "stream-3",
+              "type": "stream"
+            },
+            "coord": {
+              "x": -2,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "trout-11",
+              "type": "trout"
+            },
+            "coord": {
+              "x": 2,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-6",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": -2,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "stream-2",
+              "type": "stream"
+            },
+            "coord": {
+              "x": 2,
+              "y": -2
+            }
+          }
+        ],
+        "ai:easy:2e0c7681": [
+          {
+            "card": {
+              "id": "wolf-5",
+              "type": "wolf"
+            },
+            "coord": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "fox-7",
+              "type": "fox"
+            },
+            "coord": {
+              "x": 0,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "bee-6",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-8",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": 1,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-1",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": 2,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "stream-0",
+              "type": "stream"
+            },
+            "coord": {
+              "x": 0,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-5",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-5",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": -1,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-2",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": -2,
+              "y": -2
+            }
+          },
+          {
+            "card": {
+              "id": "eagle-3",
+              "type": "eagle"
+            },
+            "coord": {
+              "x": 2,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-7",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 2,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "deer-2",
+              "type": "deer"
+            },
+            "coord": {
+              "x": -1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "fox-9",
+              "type": "fox"
+            },
+            "coord": {
+              "x": -1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "trout-3",
+              "type": "trout"
+            },
+            "coord": {
+              "x": 1,
+              "y": -3
+            }
+          },
+          {
+            "card": {
+              "id": "eagle-2",
+              "type": "eagle"
+            },
+            "coord": {
+              "x": 0,
+              "y": -3
+            }
+          },
+          {
+            "card": {
+              "id": "eagle-6",
+              "type": "eagle"
+            },
+            "coord": {
+              "x": 2,
+              "y": -3
+            }
+          },
+          {
+            "card": {
+              "id": "wolf-11",
+              "type": "wolf"
+            },
+            "coord": {
+              "x": -2,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "eagle-10",
+              "type": "eagle"
+            },
+            "coord": {
+              "x": -1,
+              "y": -3
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-3",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": -2,
+              "y": -3
+            }
+          },
+          {
+            "card": {
+              "id": "stream-10",
+              "type": "stream"
+            },
+            "coord": {
+              "x": -2,
+              "y": 0
+            }
+          }
+        ],
+        "ai:medium:93c7a72d": [
+          {
+            "card": {
+              "id": "deer-4",
+              "type": "deer"
+            },
+            "coord": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "stream-8",
+              "type": "stream"
+            },
+            "coord": {
+              "x": 0,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "fox-10",
+              "type": "fox"
+            },
+            "coord": {
+              "x": 0,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "deer-6",
+              "type": "deer"
+            },
+            "coord": {
+              "x": 2,
+              "y": 2
+            }
+          },
+          {
+            "card": {
+              "id": "dragonfly-4",
+              "type": "dragonfly"
+            },
+            "coord": {
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "card": {
+              "id": "stream-6",
+              "type": "stream"
+            },
+            "coord": {
+              "x": -1,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-6",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-3",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "bee-8",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 2,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-1",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 2,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "bear-7",
+              "type": "bear"
+            },
+            "coord": {
+              "x": 2,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "trout-1",
+              "type": "trout"
+            },
+            "coord": {
+              "x": -1,
+              "y": 2
+            }
+          },
+          {
+            "card": {
+              "id": "wolf-9",
+              "type": "wolf"
+            },
+            "coord": {
+              "x": -1,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "eagle-9",
+              "type": "eagle"
+            },
+            "coord": {
+              "x": 1,
+              "y": 2
+            }
+          },
+          {
+            "card": {
+              "id": "bee-2",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "bee-3",
+              "type": "bee"
+            },
+            "coord": {
+              "x": 3,
+              "y": 1
+            }
+          },
+          {
+            "card": {
+              "id": "meadow-2",
+              "type": "meadow"
+            },
+            "coord": {
+              "x": 3,
+              "y": 0
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-0",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": -1,
+              "y": -1
+            }
+          },
+          {
+            "card": {
+              "id": "bear-1",
+              "type": "bear"
+            },
+            "coord": {
+              "x": 3,
+              "y": 2
+            }
+          },
+          {
+            "card": {
+              "id": "rabbit-4",
+              "type": "rabbit"
+            },
+            "coord": {
+              "x": 3,
+              "y": -1
+            }
+          }
+        ]
+      },
+      "deck": [
+        {
+          "id": "fox-0",
+          "type": "fox"
+        },
+        {
+          "id": "bee-4",
+          "type": "bee"
+        },
+        {
+          "id": "fox-4",
+          "type": "fox"
+        },
+        {
+          "id": "deer-10",
+          "type": "deer"
+        },
+        {
+          "id": "meadow-11",
+          "type": "meadow"
+        },
+        {
+          "id": "trout-4",
+          "type": "trout"
+        },
+        {
+          "id": "bee-11",
+          "type": "bee"
+        },
+        {
+          "id": "stream-4",
+          "type": "stream"
+        },
+        {
+          "id": "meadow-10",
+          "type": "meadow"
+        },
+        {
+          "id": "eagle-1",
+          "type": "eagle"
+        },
+        {
+          "id": "trout-0",
+          "type": "trout"
+        },
+        {
+          "id": "eagle-11",
+          "type": "eagle"
+        },
+        {
+          "id": "wolf-8",
+          "type": "wolf"
+        },
+        {
+          "id": "fox-3",
+          "type": "fox"
+        },
+        {
+          "id": "fox-6",
+          "type": "fox"
+        },
+        {
+          "id": "deer-7",
+          "type": "deer"
+        },
+        {
+          "id": "bear-3",
+          "type": "bear"
+        },
+        {
+          "id": "bear-10",
+          "type": "bear"
+        },
+        {
+          "id": "trout-6",
+          "type": "trout"
+        },
+        {
+          "id": "wolf-6",
+          "type": "wolf"
+        },
+        {
+          "id": "trout-10",
+          "type": "trout"
+        },
+        {
+          "id": "bear-0",
+          "type": "bear"
+        },
+        {
+          "id": "deer-11",
+          "type": "deer"
+        },
+        {
+          "id": "bear-11",
+          "type": "bear"
+        },
+        {
+          "id": "deer-5",
+          "type": "deer"
+        },
+        {
+          "id": "bee-7",
+          "type": "bee"
+        },
+        {
+          "id": "meadow-0",
+          "type": "meadow"
+        },
+        {
+          "id": "bee-1",
+          "type": "bee"
+        },
+        {
+          "id": "wolf-0",
+          "type": "wolf"
+        },
+        {
+          "id": "bear-4",
+          "type": "bear"
+        },
+        {
+          "id": "fox-1",
+          "type": "fox"
+        },
+        {
+          "id": "eagle-0",
+          "type": "eagle"
+        },
+        {
+          "id": "eagle-4",
+          "type": "eagle"
+        },
+        {
+          "id": "rabbit-11",
+          "type": "rabbit"
+        },
+        {
+          "id": "bear-2",
+          "type": "bear"
+        },
+        {
+          "id": "fox-5",
+          "type": "fox"
+        },
+        {
+          "id": "fox-8",
+          "type": "fox"
+        },
+        {
+          "id": "stream-7",
+          "type": "stream"
+        },
+        {
+          "id": "deer-1",
+          "type": "deer"
+        },
+        {
+          "id": "bear-5",
+          "type": "bear"
+        },
+        {
+          "id": "rabbit-5",
+          "type": "rabbit"
+        },
+        {
+          "id": "wolf-7",
+          "type": "wolf"
+        },
+        {
+          "id": "wolf-2",
+          "type": "wolf"
+        },
+        {
+          "id": "deer-3",
+          "type": "deer"
+        },
+        {
+          "id": "wolf-4",
+          "type": "wolf"
+        },
+        {
+          "id": "fox-11",
+          "type": "fox"
+        },
+        {
+          "id": "wolf-10",
+          "type": "wolf"
+        },
+        {
+          "id": "eagle-7",
+          "type": "eagle"
+        },
+        {
+          "id": "rabbit-3",
+          "type": "rabbit"
+        },
+        {
+          "id": "trout-8",
+          "type": "trout"
+        },
+        {
+          "id": "stream-9",
+          "type": "stream"
+        },
+        {
+          "id": "bear-9",
+          "type": "bear"
+        },
+        {
+          "id": "dragonfly-10",
+          "type": "dragonfly"
+        },
+        {
+          "id": "rabbit-9",
+          "type": "rabbit"
+        },
+        {
+          "id": "deer-9",
+          "type": "deer"
+        },
+        {
+          "id": "wolf-1",
+          "type": "wolf"
+        },
+        {
+          "id": "bear-8",
+          "type": "bear"
+        },
+        {
+          "id": "bee-9",
+          "type": "bee"
+        },
+        {
+          "id": "trout-5",
+          "type": "trout"
+        },
+        {
+          "id": "dragonfly-9",
+          "type": "dragonfly"
+        },
+        {
+          "id": "eagle-8",
+          "type": "eagle"
+        },
+        {
+          "id": "dragonfly-0",
+          "type": "dragonfly"
+        },
+        {
+          "id": "stream-5",
+          "type": "stream"
+        },
+        {
+          "id": "trout-9",
+          "type": "trout"
+        },
+        {
+          "id": "stream-11",
+          "type": "stream"
+        },
+        {
+          "id": "trout-2",
+          "type": "trout"
+        },
+        {
+          "id": "dragonfly-11",
+          "type": "dragonfly"
+        },
+        {
+          "id": "dragonfly-1",
+          "type": "dragonfly"
+        },
+        {
+          "id": "eagle-5",
+          "type": "eagle"
+        },
+        {
+          "id": "rabbit-8",
+          "type": "rabbit"
+        },
+        {
+          "id": "fox-2",
+          "type": "fox"
+        },
+        {
+          "id": "trout-7",
+          "type": "trout"
+        }
+      ],
+      "createdAt": "2026-06-25T04:28:12.745Z",
+      "startedAt": "2026-06-25T04:28:12.747Z",
+      "finishedAt": "2026-06-25T04:28:17.001Z",
+      "scoresByPlayerId": {
+        "user-human": {
+          "stream": 2.5,
+          "wolf": 6,
+          "meadow": 0,
+          "fox": 0,
+          "bear": 0,
+          "trout": 2,
+          "deer": 8,
+          "eagle": 0,
+          "dragonfly": 0,
+          "bee": 6,
+          "diversityPenalty": -5,
+          "total": 19.5
+        },
+        "ai:easy:2e0c7681": {
+          "stream": 2.5,
+          "wolf": 12,
+          "meadow": 3,
+          "fox": 0,
+          "bear": 0,
+          "trout": 2,
+          "deer": 4,
+          "eagle": 10,
+          "dragonfly": 2,
+          "bee": 3,
+          "diversityPenalty": 0,
+          "total": 38.5
+        },
+        "ai:medium:93c7a72d": {
+          "stream": 8,
+          "wolf": 6,
+          "meadow": 3,
+          "fox": 3,
+          "bear": 4,
+          "trout": 4,
+          "deer": 8,
+          "eagle": 2,
+          "dragonfly": 2,
+          "bee": 21,
+          "diversityPenalty": 0,
+          "total": 61
+        }
+      }
+    }
+  ],
+  "users": [],
+  "invites": []
+}

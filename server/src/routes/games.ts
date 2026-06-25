@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Response } from 'express';
 import { z } from 'zod';
 import * as gameService from '../services/gameService.js';
+import * as aiService from '../services/aiService.js';
 import * as inviteStore from '../data/inviteStore.js';
 import { sendInviteEmail } from '../services/emailService.js';
 import { getUserAnalytics } from '../services/analyticsService.js';
@@ -50,6 +51,16 @@ const nudgePlayersSchema = z.object({
   playerIds: z.array(z.string().min(1)).min(1),
 });
 
+const addBotSchema = z.object({
+  userId: z.string().min(1),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'impossible']),
+});
+
+const removeBotSchema = z.object({
+  userId: z.string().min(1),
+  botUserId: z.string().min(1),
+});
+
 function requireLobbyHost(gameId: string, userId: string) {
   const game = gameService.getGame(gameId);
   if (game.status !== 'lobby') throw new Error('Invites can only be managed before the game starts');
@@ -85,11 +96,33 @@ router.post('/:id/join', (req, res) => {
   }
 });
 
+router.post('/:id/bots', (req, res) => {
+  try {
+    const { userId, difficulty } = addBotSchema.parse(req.body);
+    const game = aiService.addAiPlayer(req.params.id, userId, difficulty);
+    res.status(201).json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+router.post('/:id/bots/remove', (req, res) => {
+  try {
+    const { userId, botUserId } = removeBotSchema.parse(req.body);
+    const game = aiService.removeAiPlayer(req.params.id, userId, botUserId);
+    res.json(game);
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
 router.post('/:id/start', (req, res) => {
   try {
     const { userId } = userIdSchema.parse(req.body);
     const game = gameService.startGame(req.params.id, userId);
     res.json(game);
+    // Drive any bots that should move on turn 1 (async; don't block the response).
+    void aiService.driveAiTurns(game.id);
   } catch (err) {
     handleError(res, err);
   }
@@ -209,6 +242,8 @@ router.post('/:id/move', (req, res) => {
     const { userId, cardId, coord, swap } = submitMoveSchema.parse(req.body);
     const game = gameService.submitMove(req.params.id, userId, { cardId, coord, swap });
     res.json(game);
+    // After a human submits, let any pending bots take their turns (async).
+    void aiService.driveAiTurns(req.params.id);
   } catch (err) {
     handleError(res, err);
   }
