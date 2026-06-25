@@ -70,6 +70,16 @@ API calls go through `src/services/gameApi.ts` (client-side type duplicates, not
 
 Styling uses custom CSS in `src/styles/` — semantic class names (Tailwind-inspired but plain CSS).
 
+### AI opponents (`ai/` + `server/src/services/aiService.ts`)
+Computer players at four difficulties (easy/medium/hard/impossible) for 3–6
+player games. `ai/` holds a verified Python port of the engine (scores
+identically to the TS `computeScores` — see `ai/tests/test_parity.py`), greedy
+baselines, and an AlphaZero-style self-play stack (ISMCTS + policy/value net).
+The Node server adds bots in the lobby (`POST /:id/bots`), snapshots the game,
+and gets each move by spawning `ai/serve/ai_move.py` (async game = subprocess is
+fine). Impossible uses the trained net when a strong `ai/checkpoints/best.pt`
+exists, else deep heuristic ISMCTS. Full design: `docs/ai-design.md`.
+
 ## What's Not Yet Implemented
 - Real email sending (needs SMTP env vars configured)
 - Persistent storage (currently in-memory, schema in `server/src/db/schema.sql`)
