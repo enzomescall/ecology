@@ -1,0 +1,8 @@
+# Runtime (serving easy/medium/hard bots): the ai_move CLI needs numpy.
+numpy>=1.26
+
+# Impossible tier with a trained net, and all training/export:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install onnx
+# torch and onnx are intentionally NOT pinned here so the lightweight serving
+# install (numpy only) stays small. Install them where you train or run the net.

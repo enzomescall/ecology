@@ -154,6 +154,12 @@ python3 tests/test_serve_cli.py    # every difficulty returns a legal move
 
 **Server env knobs** (`aiService.ts`): `AI_DIR`, `AI_PYTHON`, `AI_MOVE_TIMEOUT_MS`.
 
+**Deployment note.** The host running the Node server must have `python3` +
+`numpy` (`pip install -r ai/requirements.txt`) for easy/medium/hard bots; add
+`torch` only where the Impossible net runs. If Python isn't available the bot
+endpoints will error — keep bots dev/self-host only until the deployment image
+includes Python, or implement the pure-Node ONNX serving path (§6).
+
 ---
 
 ## 6. Where to take it next
