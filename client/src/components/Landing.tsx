@@ -30,56 +30,57 @@ export function Landing({ onEmailSubmit }: LandingProps) {
   };
 
   return (
-    <div className="page-container">
-      <div className="page-constraint">
+    <div className="landing-page">
+      <div className="landing-card">
         {/* Logo/Icon */}
         <div className="flex-center mb-6">
-          <div 
-            className="avatar avatar-lg"
-            style={{ backgroundColor: 'var(--color-forest-600)' }}
-          >
-            <svg 
-              width="48" 
-              height="48" 
-              viewBox="0 0 48 48" 
-              fill="none" 
+          <div className="landing-logo">
+            <svg
+              width="52"
+              height="52"
+              viewBox="0 0 48 48"
+              fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path 
-                d="M24 8L32 20H16L24 8Z" 
-                fill="var(--color-sage-100)" 
-                opacity="0.9"
-              />
-              <path 
-                d="M24 16L30 26H18L24 16Z" 
-                fill="var(--color-sage-200)" 
-                opacity="0.8"
-              />
-              <path 
-                d="M24 24L28 32H20L24 24Z" 
-                fill="var(--color-sage-300)" 
-                opacity="0.7"
-              />
-              <rect 
-                x="22" 
-                y="32" 
-                width="4" 
-                height="8" 
-                fill="var(--color-earth-500)"
-              />
+              <path d="M24 6L33 20H15L24 6Z" fill="#eef7ee" opacity="0.95" />
+              <path d="M24 15L31 27H17L24 15Z" fill="#dcecdc" opacity="0.9" />
+              <path d="M24 23L29 33H19L24 23Z" fill="#cbe0cb" opacity="0.85" />
+              <rect x="22" y="33" width="4" height="9" rx="1.2" fill="var(--color-earth-400)" />
             </svg>
           </div>
         </div>
 
         {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="mb-3">Ecology</h1>
-          <p
-            className="text-lg"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
+        <div className="text-center mb-6">
+          <h1 className="mb-2">Ecology</h1>
+          <p className="text-lg" style={{ color: 'var(--color-text-muted)', margin: 0 }}>
             A nature-themed card game for friends
           </p>
+        </div>
+
+        {/* Decorative card showcase */}
+        <div className="landing-card-fan" aria-hidden>
+          {[
+            ['🌊', '#5ba3e8', '#3a7bc4'],
+            ['🌿', '#8ec84f', '#69a338'],
+            ['🦊', '#f56a1f', '#d24e00'],
+            ['🐻', '#8a6650', '#664636'],
+            ['🦅', '#9e7d6b', '#7a5d4b'],
+          ].map(([emoji, g1, g2], i) => {
+            const offset = i - 2; // -2..2
+            return (
+              <span
+                key={i}
+                className="landing-card-chip"
+                style={{
+                  background: `linear-gradient(160deg, ${g1}, ${g2})`,
+                  transform: `rotate(${offset * 6}deg) translateY(${Math.abs(offset) * 5}px)`,
+                }}
+              >
+                {emoji}
+              </span>
+            );
+          })}
         </div>
 
         {/* Login Form */}

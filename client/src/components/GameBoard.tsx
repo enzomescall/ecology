@@ -680,20 +680,33 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
         )}
 
         {/* Player Ecosystem */}
-        <div className="card mb-6" style={{ padding: '1rem', textAlign: 'center' }}>
-          <h3 className="mb-2" style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+        <div className="card mb-6" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <h3 className="mb-2" style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Your Ecosystem
           </h3>
-          <EcosystemGrid
-            ecosystem={displayEcosystem}
-            validPlacements={placements}
-            onCellClick={handleCellClick}
-            selectedCell={selectedCell}
-            size="md"
-            swapMode={swapMode}
-            swapSelection={swapSelection}
-            onSwapSelect={handleSwapSelect}
-          />
+          {displayEcosystem.length === 0 && !selectedCard ? (
+            <div style={{
+              padding: '2.25rem 1rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              color: 'var(--color-text-muted)',
+            }}>
+              <div style={{ fontSize: '2.25rem', lineHeight: 1 }} aria-hidden>🌱</div>
+              <p style={{ margin: 0, fontSize: '0.9rem', maxWidth: 280 }}>
+                Your habitat is empty. Pick a card above to place your first species.
+              </p>
+            </div>
+          ) : (
+            <EcosystemGrid
+              ecosystem={displayEcosystem}
+              validPlacements={placements}
+              onCellClick={handleCellClick}
+              selectedCell={selectedCell}
+              size="md"
+              swapMode={swapMode}
+              swapSelection={swapSelection}
+              onSwapSelect={handleSwapSelect}
+            />
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -748,20 +761,27 @@ export function GameBoard({ gameId, user, onBack, onGameEnd }: GameBoardProps) {
                     key={id}
                     className="card"
                     style={{
-                      padding: '0.75rem',
-                      border: `2px solid ${submittedMove ? '#8b5a2b' : '#16a34a'}`,
-                      boxShadow: submittedMove ? '0 0 0 2px rgba(139,90,43,0.12)' : '0 0 0 2px rgba(22,163,74,0.12)',
+                      padding: '0.85rem',
+                      border: `1.5px solid ${submittedMove ? 'var(--color-amber-500)' : 'var(--color-forest-500)'}`,
+                      boxShadow: submittedMove ? '0 0 0 3px rgba(224,165,40,0.12)' : '0 0 0 3px rgba(61,133,83,0.12)',
                     }}
                   >
                     <p className="text-sm mb-2" style={{
-                      fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, marginBottom: 6,
+                      fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, marginBottom: 8,
+                      display: 'flex', alignItems: 'center', gap: 8,
                     }}>
                       {player?.name ?? id}
                       <span style={{
-                        marginLeft: 8,
-                        color: submittedMove ? '#8b5a2b' : '#16a34a',
-                        fontWeight: 700,
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '0.15rem 0.55rem', borderRadius: 999, fontSize: '0.72rem',
+                        fontWeight: 700, letterSpacing: '0.02em',
+                        background: submittedMove ? 'rgba(224,165,40,0.16)' : 'rgba(61,133,83,0.14)',
+                        color: submittedMove ? 'var(--color-amber-600)' : 'var(--color-forest-600)',
                       }}>
+                        <span style={{
+                          width: 6, height: 6, borderRadius: 999,
+                          background: submittedMove ? 'var(--color-amber-500)' : 'var(--color-forest-500)',
+                        }} />
                         {isWaiting ? 'Playing' : 'Submitted'}
                       </span>
                     </p>

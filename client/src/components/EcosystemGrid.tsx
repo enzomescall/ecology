@@ -81,25 +81,31 @@ export function EcosystemGrid({
             style={{
               width: cellPx,
               height: cellPx + 20,
-              border: '2px solid #111827',
-              borderRadius: 'var(--radius-lg)',
-              background: 'linear-gradient(145deg, #050505, #1f1f1f)',
-              boxShadow: 'var(--shadow-sm)',
+              border: '1px solid rgba(20,39,26,0.5)',
+              borderRadius: 'var(--radius-md)',
+              background: 'repeating-linear-gradient(135deg, #1f3a29, #1f3a29 7px, #234634 7px, #234634 14px)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), var(--shadow-sm)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.55)', fontSize: cellPx * 0.4,
             }}
-          />
+          >
+            <span aria-hidden>🌱</span>
+          </div>
         );
       } else if (isValid && size !== 'sm') {
         cells.push(
           <button
             key={key}
             onClick={() => onCellClick?.({ x, y })}
+            className="eco-cell-valid"
+            data-selected={isSelected ? 'true' : undefined}
             style={{
               width: cellPx, height: cellPx + 20,
               border: isSelected
-                ? '3px solid var(--color-forest-600)'
+                ? '2.5px solid var(--color-forest-600)'
                 : '2px dashed var(--color-sage-400)',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: isSelected ? 'var(--color-sage-200)' : 'transparent',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: isSelected ? 'var(--color-sage-200)' : 'rgba(172,195,174,0.10)',
               cursor: 'pointer',
               transition: 'all 150ms ease',
             }}
