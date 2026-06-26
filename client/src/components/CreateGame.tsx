@@ -64,19 +64,15 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
       {/* Header */}
       <header className="page-header">
         <div className="page-header-content">
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={onBack}
-              className="button-icon"
-              style={{
-                color: 'var(--color-forest-600)',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-sage-200)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="button-icon button-icon-sm"
+              style={{ color: 'var(--color-forest-600)' }}
             >
-              <ArrowLeft size={24} />
+              <ArrowLeft size={20} />
             </button>
-            <h2>Create game</h2>
+            <h2 style={{ margin: 0 }}>Create game</h2>
           </div>
         </div>
       </header>
@@ -124,20 +120,14 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
             </label>
             <div className="space-stack-sm">
               {invites.map((email, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={index} style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => updateInvite(index, e.target.value)}
                     placeholder="friend@example.com"
-                    className="form-input flex-1"
-                    style={{
-                      backgroundColor: 'var(--color-bg-card)',
-                      borderColor: 'var(--color-border)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = 'var(--color-border-focus)'}
-                    onBlur={(e) => e.target.style.borderColor = 'var(--color-border)'}
+                    className="form-input"
+                    style={{ flex: 1 }}
                   />
                   {invites.length > 1 && (
                     <button
@@ -208,38 +198,31 @@ export function CreateGame({ user, onBack, onCreate }: CreateGameProps) {
       </main>
 
       {/* Bottom Action */}
-      <div 
-        className="fixed bottom-0 left-4 right-0 p-4"
+      <div
         style={{
-          backgroundColor: 'var(--color-bg-card)',
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '1rem',
+          backgroundColor: 'rgba(255,255,255,0.85)',
+          backdropFilter: 'saturate(160%) blur(12px)',
+          WebkitBackdropFilter: 'saturate(160%) blur(12px)',
           borderTop: '1px solid var(--color-border)',
-          boxShadow: '0 -4px 6px -1px rgb(0 0 0 / 0.05)',
+          boxShadow: '0 -8px 24px -18px rgba(20,39,26,0.4)',
         }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div style={{ maxWidth: '42rem', margin: '0 auto' }}>
           <button
             onClick={handleCreate}
             disabled={!canCreate || isLoading}
-            className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: (canCreate && !isLoading) ? 'var(--color-forest-600)' : 'var(--color-sage-400)',
-            }}
-            onMouseEnter={(e) => {
-              if (canCreate && !isLoading) {
-                e.currentTarget.style.backgroundColor = 'var(--color-forest-700)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (canCreate && !isLoading) {
-                e.currentTarget.style.backgroundColor = 'var(--color-forest-600)';
-              }
-            }}
+            className="button-primary"
           >
             {isLoading ? 'Creating...' : 'Create game'}
           </button>
         </div>
       </div>
-      <div className="h-20" /> {/* Spacer for fixed button */}
+      <div style={{ height: '5rem' }} /> {/* Spacer for fixed button */}
     </div>
   );
 }

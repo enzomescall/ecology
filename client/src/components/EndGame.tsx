@@ -192,52 +192,65 @@ export function EndGame({ gameId, user, onReturnHome, onNewGame }: EndGameProps)
 
   if (error) return <div className="page-content"><p className="text-error">{error}</p></div>;
 
+  const winner = rankings[0];
   return (
     <div className="min-h-screen pb-8">
-      <header className="card-header text-center">
-        <h1>Game Over</h1>
+      <header className="endgame-hero">
+        <div className="endgame-hero-kicker">Final results</div>
+        <h1 style={{ color: 'white', margin: 0 }}>Game Over</h1>
+        {winner && (
+          <p style={{ margin: '0.4rem 0 0', color: 'rgba(234,243,234,0.9)' }}>
+            🏆 {winner.name} wins with {winner.score.total} points
+          </p>
+        )}
       </header>
 
-      <main className="page-content">
+      <main className="page-content" style={{ marginTop: '1.25rem' }}>
         <div className="space-stack-md">
           {rankings.map((player) => {
             const isMe = player.userId === user.userId;
             const isExpanded = expandedPlayer === player.userId;
             const isBoardVisible = showBoard === player.userId;
             const cardScores = computeCardScores(player.ecosystem);
+            const MEDALS: Record<number, { emoji: string; grad: string; ring: string }> = {
+              1: { emoji: '🥇', grad: 'linear-gradient(135deg, #f0c259, #d99e1e)', ring: 'rgba(217,158,30,0.35)' },
+              2: { emoji: '🥈', grad: 'linear-gradient(135deg, #cdd6db, #9aa8b0)', ring: 'rgba(154,168,176,0.32)' },
+              3: { emoji: '🥉', grad: 'linear-gradient(135deg, #d9a878, #b07c4f)', ring: 'rgba(176,124,79,0.32)' },
+            };
+            const medal = MEDALS[player.rank];
             return (
-              <div key={player.userId} className="card" style={{ border: isMe ? '2px solid var(--color-forest-600)' : undefined }}>
-                {/* Rank number banner */}
-                <div style={{
-                  backgroundColor: player.rank === 1 ? 'var(--color-forest-600)' : 'var(--color-sage-300)',
-                  color: player.rank === 1 ? 'white' : 'var(--color-text-primary)',
-                  textAlign: 'center',
-                  padding: '0.25rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
-                }}>
-                  #{player.rank}
-                </div>
-
+              <div key={player.userId} className="card" style={{
+                padding: 0, overflow: 'hidden',
+                border: isMe ? '2px solid var(--color-forest-600)' : undefined,
+              }}>
                 <button
-                  className="card-button w-full p-4 flex items-center gap-4"
+                  className="card-button"
                   onClick={() => setExpandedPlayer(isExpanded ? null : player.userId)}
-                  style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                  style={{ width: '100%', textAlign: 'left', background: player.rank === 1 ? 'linear-gradient(180deg, rgba(240,194,89,0.10), transparent)' : 'none', border: 'none', cursor: 'pointer', padding: '0.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}
                 >
-                  <span className="flex-1">
-                    <strong>{player.name}</strong>
-                    {isMe && <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}> (you)</span>}
+                  <span style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '2.6rem', height: '2.6rem', borderRadius: 999, flexShrink: 0,
+                    background: medal ? medal.grad : 'var(--color-sage-200)',
+                    color: medal ? 'white' : 'var(--color-text-secondary)',
+                    fontWeight: 800, fontSize: medal ? '1.2rem' : '0.95rem',
+                    boxShadow: medal ? `0 4px 10px -2px ${medal.ring}, inset 0 1px 0 rgba(255,255,255,0.3)` : 'inset 0 0 0 1px var(--color-sage-300)',
+                  }}>
+                    {medal ? medal.emoji : `#${player.rank}`}
                   </span>
-                  <span style={{ fontWeight: 600 }}>{player.score.total} pts</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <strong style={{ fontSize: '1.02rem' }}>{player.name}</strong>
+                    {isMe && <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}> (you)</span>}
+                    <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                      {isExpanded ? 'Tap to collapse' : 'Tap for score breakdown'}
+                    </span>
+                  </span>
+                  <span style={{ fontWeight: 700, fontSize: '1.15rem', fontFamily: 'var(--font-display)', color: 'var(--color-forest-700)' }}>
+                    {player.score.total}
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-muted)', marginLeft: 3 }}>pts</span>
+                  </span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
                 </button>
-                {!isExpanded && (
-                  <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--color-text-muted)', padding: '0 0 0.5rem', margin: 0, cursor: 'pointer' }}
-                    onClick={() => setExpandedPlayer(player.userId)}>
-                    Click for score breakdown
-                  </p>
-                )}
 
                 {isExpanded && (
                   <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid var(--color-border)' }}>

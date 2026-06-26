@@ -13,6 +13,40 @@
   padding-bottom: 2rem;
 }
 
+/* ===== END GAME ===== */
+
+.endgame-hero {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 2.4rem 1rem 2.2rem;
+  background-image: var(--gradient-brand);
+  box-shadow: var(--shadow-md);
+}
+
+.endgame-hero::after {
+  content: '';
+  position: absolute;
+  inset: -50% 30% auto -10%;
+  height: 360px;
+  background: radial-gradient(circle, rgba(240, 194, 89, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.endgame-hero-kicker {
+  position: relative;
+  color: var(--color-amber-400);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.endgame-hero h1 {
+  position: relative;
+}
+
 /* ===== LANDING ===== */
 
 .landing-page {
@@ -188,6 +222,15 @@
 .button-primary:focus-visible {
   outline: none;
   box-shadow: var(--shadow-primary), var(--ring-focus);
+}
+
+.button-primary:disabled {
+  background-image: none;
+  background-color: var(--color-sage-400);
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+  opacity: 0.85;
 }
 
 .button-secondary {
@@ -440,7 +483,6 @@ select.form-input:focus {
   font-weight: 700;
   color: white;
   font-size: 0.75rem;
-  background-image: var(--gradient-primary);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
